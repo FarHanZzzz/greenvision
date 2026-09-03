@@ -462,96 +462,132 @@ export const CommandMap: React.FC = () => {
       {/* Slide-Over Incident Details Drawer (PRD Section 21) */}
       {selectedIncident && (
         <div className="fixed inset-0 z-[500] flex justify-end" onClick={() => setSelectedIncidentId(null)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-[#040810]/75 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-sm bg-slate-950/98 backdrop-blur-md border-l border-slate-800 text-white p-4 shadow-2xl flex flex-col overflow-y-auto"
+            className="relative w-full max-w-md sm:max-w-lg bg-[#0b1728] border-l-2 border-emerald-500/60 text-white p-5 sm:p-6 shadow-2xl flex flex-col overflow-y-auto z-10"
             onClick={(e) => e.stopPropagation()}
           >
-          <div>
+          <div className="space-y-4">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-bold text-emerald-400">{selectedIncident.id}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                  selectedIncident.priority === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                  selectedIncident.priority === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                  'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-700/80">
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono text-base font-black text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800/80 shadow-sm">
+                  {selectedIncident.id}
+                </span>
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-black tracking-wide border shadow-sm ${
+                  selectedIncident.priority === 'CRITICAL' ? 'bg-red-500/20 text-red-300 border-red-500/50' :
+                  selectedIncident.priority === 'HIGH' ? 'bg-orange-500/20 text-orange-300 border-orange-500/50' :
+                  'bg-amber-500/20 text-amber-300 border-amber-500/50'
                 }`}>
                   {selectedIncident.priority} PRIORITY
                 </span>
               </div>
               <button
                 onClick={() => setSelectedIncidentId(null)}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+                className="p-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition border border-slate-700"
+                aria-label="Close drawer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Title & Location */}
-            <div className="mt-3">
-              <h4 className="font-bold text-slate-100 text-sm">{selectedIncident.title}</h4>
-              <p className="text-xs text-slate-400 mt-0.5">{selectedIncident.locationName} • {selectedIncident.cameraName}</p>
+            {/* Title & Location (High Contrast) */}
+            <div className="space-y-1">
+              <h4 className="font-extrabold text-white text-base sm:text-lg leading-snug">
+                {selectedIncident.title}
+              </h4>
+              <p className="text-xs sm:text-sm font-semibold text-emerald-300 flex items-center gap-1.5">
+                <span>📍 {selectedIncident.locationName}</span>
+                <span className="text-slate-500">•</span>
+                <span className="text-slate-300">{selectedIncident.cameraName}</span>
+              </p>
             </div>
 
-            {/* Status & SLA Pill */}
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
-                <span className="text-[10px] text-slate-400 uppercase font-mono">STATUS</span>
-                <div className="font-bold text-emerald-400 mt-0.5">{selectedIncident.status}</div>
+            {/* Status & AI Inference Pill (High Visibility Cards) */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#122238] p-3 rounded-xl border border-slate-700 shadow-sm">
+                <span className="text-[11px] text-slate-300 uppercase font-mono font-bold tracking-wider block">
+                  Incident Status
+                </span>
+                <div className="font-black text-emerald-400 text-sm sm:text-base mt-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>{selectedIncident.status}</span>
+                </div>
               </div>
-              <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
-                <span className="text-[10px] text-slate-400 uppercase font-mono">AI INFERENCE</span>
-                <div className="font-bold text-slate-200 mt-0.5">{Math.round(selectedIncident.aiConfidence * 100)}% Confidence</div>
+              <div className="bg-[#122238] p-3 rounded-xl border border-slate-700 shadow-sm">
+                <span className="text-[11px] text-slate-300 uppercase font-mono font-bold tracking-wider block">
+                  AI Optical Inference
+                </span>
+                <div className="font-black text-white text-sm sm:text-base mt-1">
+                  {Math.round(selectedIncident.aiConfidence * 100)}% Confidence
+                </div>
               </div>
             </div>
 
-            {/* Real Photographic Before / After Evidence (PRD Section 31) */}
-            <div className="mt-4">
-              <div className="text-[11px] font-mono text-slate-400 uppercase mb-1.5 flex items-center justify-between">
-                <span>Visual Photographic Evidence</span>
-                <span className="text-emerald-400 text-[10px]">HIGH RESOLUTION</span>
+            {/* Real Photographic Before / After Evidence (PRD Section 31 - High Resolution Display) */}
+            <div className="bg-[#101e33] p-3.5 rounded-2xl border border-slate-700/80 shadow-md">
+              <div className="text-xs font-mono text-slate-200 uppercase mb-2.5 flex items-center justify-between font-bold">
+                <span className="flex items-center gap-1.5 text-white">
+                  <span>📸</span>
+                  <span>Visual Photographic Evidence</span>
+                </span>
+                <span className="bg-emerald-950 text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-700/80">
+                  HIGH RESOLUTION
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="text-[10px] text-slate-400 mb-1 font-semibold">BEFORE (DETECTION)</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#0b1626] p-2 rounded-xl border border-rose-500/30 shadow-sm">
+                  <div className="text-[11px] text-rose-300 mb-1.5 font-bold font-mono flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                    <span>BEFORE (DETECTION)</span>
+                  </div>
                   <img
                     src={selectedIncident.beforeEvidenceUrl}
                     alt="Before Evidence"
-                    className="w-full h-24 object-cover rounded-xl border border-red-500/40 shadow"
+                    className="w-full h-28 sm:h-32 object-cover rounded-lg border border-rose-500/40 shadow"
                   />
                 </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 mb-1 font-semibold">AFTER (CLEANED)</div>
+                <div className="bg-[#0b1626] p-2 rounded-xl border border-emerald-500/30 shadow-sm">
+                  <div className="text-[11px] text-emerald-300 mb-1.5 font-bold font-mono flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>AFTER (CLEANED)</span>
+                  </div>
                   {selectedIncident.afterEvidenceUrl ? (
                     <img
                       src={selectedIncident.afterEvidenceUrl}
                       alt="After Evidence"
-                      className="w-full h-24 object-cover rounded-xl border border-emerald-500/40 shadow"
+                      className="w-full h-28 sm:h-32 object-cover rounded-lg border border-emerald-500/40 shadow"
                     />
                   ) : (
-                    <div className="w-full h-24 rounded-xl border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 text-[10px] p-2 text-center">
-                      <Clock className="w-4 h-4 text-slate-600 mb-1" />
-                      <span>Pending resolution submission</span>
+                    <div className="w-full h-28 sm:h-32 rounded-lg border-2 border-dashed border-slate-700 bg-slate-900/60 flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center">
+                      <Clock className="w-5 h-5 text-amber-400 mb-1.5 animate-pulse" />
+                      <span className="font-semibold text-slate-300">Cleaned Proof Pending</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">Awaiting Field Upload</span>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Assigned Personnel Info */}
-            <div className="mt-4 bg-slate-900 p-3 rounded-2xl border border-slate-800 text-xs space-y-1.5">
-              <div className="flex items-center justify-between text-slate-400 text-[11px]">
-                <span>Assigned Unit:</span>
-                <span className="font-semibold text-slate-200">{selectedIncident.assignedDepartment}</span>
+            {/* Assigned Personnel Info Box (Ultra-Clear High Contrast) */}
+            <div className="bg-[#122238] p-4 rounded-2xl border border-slate-700 shadow-md text-xs space-y-2.5">
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <span className="text-slate-300 font-semibold text-xs">Assigned Unit:</span>
+                <span className="font-black text-white text-xs uppercase font-mono px-2 py-0.5 bg-slate-800 rounded border border-slate-700">
+                  {selectedIncident.assignedDepartment}
+                </span>
               </div>
-              <div className="flex items-center justify-between text-slate-400 text-[11px]">
-                <span>Lead Responder:</span>
-                <span className="font-semibold text-emerald-400">{selectedIncident.assignedResponderName || "Unassigned"}</span>
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                <span className="text-slate-300 font-semibold text-xs">Lead Field Responder:</span>
+                <span className="font-bold text-emerald-300 text-sm">
+                  {selectedIncident.assignedResponderName || "Unassigned"}
+                </span>
               </div>
-              <div className="flex items-center justify-between text-slate-400 text-[11px]">
-                <span>Contact Phone:</span>
-                <span className="font-mono text-sky-400 font-bold">01307726701</span>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 font-semibold text-xs">Contact Phone:</span>
+                <span className="font-mono text-sky-300 font-extrabold text-sm tracking-wide bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/80">
+                  01307726701
+                </span>
               </div>
             </div>
           </div>
@@ -637,10 +673,10 @@ export const CommandMap: React.FC = () => {
 
             <button
               onClick={() => setSelectedCameraId(selectedIncident.cameraId)}
-              className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center gap-1.5 transition"
+              className="w-full py-3 rounded-xl bg-[#122238] hover:bg-[#1a2f4d] text-white font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 shadow-md transition"
             >
-              <Eye className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Inspect Live Feed ({selectedIncident.cameraId})</span>
+              <Eye className="w-4 h-4 text-emerald-400" />
+              <span>Inspect Live CCTV Feed ({selectedIncident.cameraId})</span>
             </button>
           </div>
         </div>
