@@ -68,10 +68,10 @@ export function App() {
   ];
 
   return (
-    <div className={`min-h-screen ${currentInterface === 'HERO' ? 'bg-[#070d0b] text-white' : 'bg-slate-100 text-slate-900'} flex flex-col font-sans selection:bg-emerald-500 selection:text-white pb-20`}>
+    <div className={`min-h-screen ${currentInterface === 'HERO' ? 'bg-[#070d0b] text-white' : 'bg-slate-100 text-slate-900 pb-20'} flex flex-col font-sans selection:bg-emerald-500 selection:text-white`}>
       
-      {/* Global Navigation Header with UIU Branding & Guide */}
-      <HeaderNav />
+      {/* Global Navigation Header (Only in Dashboard & Operations modes) */}
+      {currentInterface !== 'HERO' && <HeaderNav />}
 
       {/* INTERFACE 0: HERO SHOWCASE & PLATFORM LANDING PAGE */}
       {currentInterface === 'HERO' && (
