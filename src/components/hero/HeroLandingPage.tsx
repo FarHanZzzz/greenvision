@@ -41,11 +41,11 @@ export const HeroLandingPage: React.FC = () => {
         style={{ transform: 'translateZ(0)', willChange: 'transform' }}
       >
         <GenerativeTree 
-          hue={45}             // Shifts golden motes into glowing emerald/mint foliage
-          saturation={1.3}     // Rich chlorophyll vibrancy
-          brightness={1.05}    // Clean luminance against deep dark canvas
-          speed={0.85}         // Majestic, serene branching flow
-          particleAmount={0.9} // Optimized particle count for maximum FPS
+          hue={0}              // Native emerald & mint palette in canvas - zero CSS filter overhead
+          saturation={1}
+          brightness={1}
+          speed={1}            // Natural fluid biological bloom
+          particleAmount={0.8} // Smooth drift
           size={1.0}
           className="w-full h-full"
         />

@@ -78,11 +78,10 @@ html, body, canvas { width: 100%; height: 100%; margin: 0; overflow: hidden; bac
     generativeTreeSource
       .replace(/<script[^>]+cloudflareinsights\.com[^>]*><\/script>/gi, "")
       .replace("</head>", `${focusStyles}${controls}</head>`)
-      // Reach the full branching canopy quickly (and hold it long) so the tree is
-      // fully formed on screen — a bare early-growth stalk is not representative.
+      // Reach the full branching canopy smoothly and gracefully
       .replace(
         "let GROWTH_SPEED_BASE = 0.006;",
-        "let GROWTH_SPEED_BASE = 0.07;",
+        "let GROWTH_SPEED_BASE = 0.018;",
       )
       .replace("const HOLD_DURATION = 400;", "const HOLD_DURATION = 1500;")
       .replace(
@@ -211,9 +210,12 @@ export default function GenerativeTree({
           width: "100%",
           height: "100%",
           border: 0,
-          background: "#0a0a0a",
+          background: "#070d0b",
           opacity: clamp(opacity, 0.05, 1),
-          filter: `hue-rotate(${clamp(hue, -180, 180)}deg) saturate(${clamp(saturation, 0, 2)}) brightness(${clamp(brightness, 0.35, 1.8)})`,
+          transform: "translateZ(0)",
+          filter: (hue !== 0 || saturation !== 1 || brightness !== 1)
+            ? `hue-rotate(${clamp(hue, -180, 180)}deg) saturate(${clamp(saturation, 0, 2)}) brightness(${clamp(brightness, 0.35, 1.8)})`
+            : undefined,
         }}
       />
     </div>
