@@ -36,6 +36,7 @@ export const IncidentsCenter: React.FC = () => {
   const confirmIncident = useGreenVisionStore((s) => s.confirmIncident);
   const assignIncident = useGreenVisionStore((s) => s.assignIncident);
   const reassignIncident = useGreenVisionStore((s) => s.reassignIncident);
+  const escalateIncident = useGreenVisionStore((s) => s.escalateIncident);
   const deescalateIncident = useGreenVisionStore((s) => s.deescalateIncident);
   const approveResolution = useGreenVisionStore((s) => s.approveResolution);
   const openContactModal = useGreenVisionStore((s) => s.openContactModal);
@@ -262,8 +263,15 @@ export const IncidentsCenter: React.FC = () => {
                               Confirm
                             </button>
                             <button
+                              onClick={() => escalateIncident(inc.id, 'Critical escalation by operator')}
+                              className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 font-semibold text-xs transition"
+                              title="Escalate Priority to Critical"
+                            >
+                              Escalate
+                            </button>
+                            <button
                               onClick={() => deescalateIncident(inc.id, 'Operator marked false alarm')}
-                              className="px-2 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition"
+                              className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-xs transition"
                               title="De-escalate / Dismiss"
                             >
                               De-escalate
@@ -282,8 +290,15 @@ export const IncidentsCenter: React.FC = () => {
                               <span>Dispatch</span>
                             </button>
                             <button
+                              onClick={() => escalateIncident(inc.id, 'Urgent dispatch escalation')}
+                              className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 font-semibold text-xs transition"
+                              title="Escalate Priority"
+                            >
+                              Escalate
+                            </button>
+                            <button
                               onClick={() => deescalateIncident(inc.id, 'Operator dismissed prior to dispatch')}
-                              className="px-2 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition"
+                              className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-xs transition"
                               title="De-escalate"
                             >
                               De-escalate
@@ -301,9 +316,16 @@ export const IncidentsCenter: React.FC = () => {
                               Reassign
                             </button>
                             <button
+                              onClick={() => escalateIncident(inc.id, 'Escalated to critical priority')}
+                              className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 font-semibold text-xs transition"
+                              title="Escalate Priority"
+                            >
+                              Escalate
+                            </button>
+                            <button
                               onClick={() => deescalateIncident(inc.id, 'Downgraded by supervisor')}
-                              className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium text-xs transition"
-                              title="De-escalate"
+                              className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-xs transition"
+                              title="De-escalate Priority"
                             >
                               De-escalate
                             </button>
@@ -434,19 +456,21 @@ export const IncidentsCenter: React.FC = () => {
                           </button>
                         )}
 
-                        {(inc.status === 'ASSIGNED' || inc.status === 'IN_PROGRESS') && (
-                          <div className="grid grid-cols-2 gap-1">
+                        {(inc.status === 'ASSIGNED' || inc.status === 'IN_PROGRESS' || inc.status === 'CONFIRMED' || inc.status === 'PENDING_VERIFICATION') && (
+                          <div className="grid grid-cols-2 gap-1 pt-0.5">
                             <button
-                              onClick={() => setReassigningIncident(inc)}
-                              className="py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition"
+                              onClick={() => escalateIncident(inc.id, 'Escalated by supervisor')}
+                              className="py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-[10px] transition"
+                              title="Escalate to Critical Priority"
                             >
-                              Reassign
+                              🔺 Escalate
                             </button>
                             <button
-                              onClick={() => deescalateIncident(inc.id)}
-                              className="py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[10px] transition"
+                              onClick={() => deescalateIncident(inc.id, 'Downgraded by supervisor')}
+                              className="py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold text-[10px] transition"
+                              title="De-escalate Priority"
                             >
-                              De-escalate
+                              🔻 De-escalate
                             </button>
                           </div>
                         )}
@@ -657,22 +681,35 @@ export const IncidentsCenter: React.FC = () => {
               )}
 
               {inspectingIncident.status !== 'CLOSED' && (
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => {
+                      escalateIncident(inspectingIncident.id, 'Critical priority escalation by operator');
+                      setInspectingIncident(null);
+                    }}
+                    className="py-2.5 rounded-xl bg-red-950/80 hover:bg-red-900/80 text-red-300 border border-red-700/60 font-bold text-xs transition flex items-center justify-center gap-1"
+                    title="Escalate to Critical Priority"
+                  >
+                    <Flame className="w-3.5 h-3.5 text-red-400" />
+                    <span>Escalate</span>
+                  </button>
                   <button
                     onClick={() => {
                       deescalateIncident(inspectingIncident.id, 'Hazard downgraded by operator');
                       setInspectingIncident(null);
                     }}
-                    className="flex-1 py-2 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 font-semibold text-xs transition"
+                    className="py-2.5 rounded-xl bg-amber-950/80 hover:bg-amber-900/80 text-amber-300 border border-amber-700/60 font-semibold text-xs transition flex items-center justify-center gap-1"
+                    title="De-escalate Priority / Dismiss"
                   >
-                    De-escalate
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>De-escalate</span>
                   </button>
                   <button
                     onClick={() => openContactModal("01307726701")}
-                    className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition flex items-center justify-center gap-1"
+                    className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition flex items-center justify-center gap-1"
                   >
                     <PhoneCall className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Buzz Phone</span>
+                    <span>Buzz</span>
                   </button>
                 </div>
               )}

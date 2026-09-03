@@ -1,9 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import { CameraRecord } from '../../types';
+import { useGreenVisionStore } from '../../store/useGreenVisionStore';
 
 interface CCTVCanvasFeedProps {
   camera: CameraRecord;
   hasIncident?: boolean;
+  forceCleanView?: boolean;
   className?: string;
   showDetails?: boolean;
 }
@@ -11,10 +13,16 @@ interface CCTVCanvasFeedProps {
 export const CCTVCanvasFeed: React.FC<CCTVCanvasFeedProps> = ({
   camera,
   hasIncident = false,
+  forceCleanView = false,
   className = "w-full h-full",
   showDetails = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const incidents = useGreenVisionStore((s) => s.incidents);
+  const relatedIncident = incidents.find(i => i.cameraId === camera.id || i.id === camera.currentIncidentId);
+  const isResolved = forceCleanView || (relatedIncident ? (
+    relatedIncident.status === 'PENDING_APPROVAL' || relatedIncident.status === 'CLOSED'
+  ) : false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -161,42 +169,104 @@ export const CCTVCanvasFeed: React.FC<CCTVCanvasFeedProps> = ({
         ctx.fillText(p.label, p.x - 7, py - 28);
       });
 
-      // 5. Special Environmental Incidents (Waste Pile, Bin Overflow, Waterlogging)
-      if (hasIncident || camera.id === 'GV-CAM-004') {
-        // Heavy waste pile near curb
+      // 5. Special Environmental Incidents (Waste Pile, Bin Overflow, Waterlogging) - Resolves User Request 2
+      if (hasIncident || camera.id === 'GV-CAM-004' || relatedIncident) {
         const wx = w * 0.38;
         const wy = h * 0.65;
 
-        // Black trash bags
-        ctx.fillStyle = '#0f172a';
-        ctx.beginPath();
-        ctx.arc(wx, wy, 16, 0, Math.PI * 2);
-        ctx.arc(wx + 18, wy + 2, 14, 0, Math.PI * 2);
-        ctx.arc(wx - 14, wy + 4, 12, 0, Math.PI * 2);
-        ctx.fill();
+        if (!isResolved) {
+          // ================= BEFORE CLEANUP: UNRESOLVED GARBAGE ACCUMULATION =================
+          // Black trash bags
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(wx, wy, 16, 0, Math.PI * 2);
+          ctx.arc(wx + 18, wy + 2, 14, 0, Math.PI * 2);
+          ctx.arc(wx - 14, wy + 4, 12, 0, Math.PI * 2);
+          ctx.fill();
 
-        // Scattered plastic cups/cartons
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(wx + 8, wy - 8, 6, 8);
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(wx - 10, wy + 6, 8, 6);
-        ctx.fillStyle = '#f59e0b';
-        ctx.fillRect(wx + 22, wy + 8, 7, 7);
+          // Scattered plastic cups/cartons
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(wx + 8, wy - 8, 6, 8);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(wx - 10, wy + 6, 8, 6);
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillRect(wx + 22, wy + 8, 7, 7);
 
-        // Pulsing AI Bounding Box
-        const pulse = Math.sin(tick * 0.1) * 0.3 + 0.7;
-        ctx.strokeStyle = `rgba(239, 68, 68, ${pulse})`;
-        ctx.lineWidth = 2.5;
-        ctx.setLineDash([5, 3]);
-        ctx.strokeRect(wx - 28, wy - 22, 68, 42);
-        ctx.setLineDash([]);
+          // Pulsing RED AI Bounding Box
+          const pulse = Math.sin(tick * 0.1) * 0.3 + 0.7;
+          ctx.strokeStyle = `rgba(239, 68, 68, ${pulse})`;
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([5, 3]);
+          ctx.strokeRect(wx - 28, wy - 22, 68, 42);
+          ctx.setLineDash([]);
 
-        // AI Inference Tag
-        ctx.fillStyle = '#dc2626';
-        ctx.fillRect(wx - 28, wy - 33, 115, 12);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 8px monospace';
-        ctx.fillText('AI: WASTE PILE (94%)', wx - 25, wy - 24);
+          // AI Inference Tag
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(wx - 28, wy - 33, 140, 12);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText('AI: WASTE ACCUMULATION (94%)', wx - 25, wy - 24);
+
+          // Warning Header
+          ctx.fillStyle = 'rgba(153, 27, 27, 0.85)';
+          ctx.fillRect(10, 26, 230, 16);
+          ctx.fillStyle = '#fca5a5';
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText('⚠️ UNRESOLVED ANOMALY: CLEANUP REQUIRED', 16, 37);
+        } else {
+          // ================= AFTER CLEANUP: SPOTLESS SANITIZED PAVEMENT (RESOLVED) =================
+          // Clean, washed sidewalk pavers
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(wx - 32, wy - 20, 84, 46);
+
+          // Paver division lines
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 1;
+          for (let px = wx - 32; px < wx + 52; px += 18) {
+            ctx.beginPath();
+            ctx.moveTo(px, wy - 20);
+            ctx.lineTo(px, wy + 26);
+            ctx.stroke();
+          }
+
+          // Sanitized wet sheen reflection
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+          ctx.fillRect(wx - 30, wy - 10, 80, 32);
+
+          // Upright, clean green municipal recycling bin
+          ctx.fillStyle = '#059669';
+          ctx.fillRect(wx + 22, wy - 20, 18, 28);
+          ctx.fillStyle = '#047857';
+          ctx.fillRect(wx + 20, wy - 24, 22, 5);
+
+          // Recycling check on bin
+          ctx.fillStyle = '#34d399';
+          ctx.font = 'bold 9px monospace';
+          ctx.fillText('✓', wx + 26, wy - 5);
+
+          // Pulsing GREEN AI Verification Bounding Box
+          const pulse = Math.sin(tick * 0.08) * 0.2 + 0.8;
+          ctx.strokeStyle = `rgba(16, 185, 129, ${pulse})`;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(wx - 34, wy - 24, 88, 52);
+
+          // AI Verified Tag
+          ctx.fillStyle = '#059669';
+          ctx.fillRect(wx - 34, wy - 35, 160, 12);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText('✓ AI: CLEAN PAVEMENT (99% CLEAR)', wx - 31, wy - 26);
+
+          // Live Post-Cleanup Notification banner at top of camera
+          ctx.fillStyle = 'rgba(6, 78, 59, 0.9)';
+          ctx.fillRect(10, 26, 280, 16);
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(10, 26, 280, 16);
+          ctx.fillStyle = '#6ee7b7';
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText('● VERIFIED CLEANED BY RESPONDER (01307726701)', 16, 37);
+        }
       } else if (camera.id === 'GV-CAM-005') {
         // Cafeteria terrace bin
         const bx = w * 0.45;

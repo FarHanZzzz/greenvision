@@ -50,6 +50,7 @@ export function App() {
   const setCommandSubTab = useGreenVisionStore((s) => s.setCommandSubTab);
 
   const selectedCamera = cameras.find(c => c.id === selectedCameraId);
+  const [cctvViewOverride, setCctvViewOverride] = useState<'AUTO' | 'BEFORE' | 'AFTER'>('AUTO');
 
   const commandNavItems = [
     { id: 'OVERVIEW', label: 'Overview', icon: LayoutDashboard },
@@ -180,7 +181,7 @@ export function App() {
       {/* Interactive System Guide Modal ("Tell me what are things") */}
       <SystemGuideModal />
 
-      {/* Fullscreen Live CCTV Modal with Canvas Animation (Resolves Image 1) */}
+      {/* Fullscreen Live CCTV Modal with Canvas Animation (Resolves User Request 2) */}
       {selectedCameraId && selectedCamera && (
         <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl text-white flex flex-col max-h-[90vh]">
@@ -196,19 +197,54 @@ export function App() {
                   OPTICAL LIVE FEED
                 </span>
               </div>
-              <button
-                onClick={() => setSelectedCameraId(null)}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              {/* Real-time State & Simulation Mode Toggle (Resolves User Request 2) */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-slate-900 border border-slate-700 rounded-xl p-0.5 text-xs">
+                  <button
+                    onClick={() => setCctvViewOverride('AUTO')}
+                    className={`px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold transition ${
+                      cctvViewOverride === 'AUTO' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Automatically syncs with mobile responder resolution"
+                  >
+                    ⚡ Auto-Sync Live
+                  </button>
+                  <button
+                    onClick={() => setCctvViewOverride('BEFORE')}
+                    className={`px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold transition ${
+                      cctvViewOverride === 'BEFORE' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Show camera detecting garbage spillage"
+                  >
+                    🔴 Before (Waste)
+                  </button>
+                  <button
+                    onClick={() => setCctvViewOverride('AFTER')}
+                    className={`px-2.5 py-1 rounded-lg font-mono text-[10px] font-bold transition ${
+                      cctvViewOverride === 'AFTER' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Show camera confirming spotless cleaned pavement"
+                  >
+                    🟢 After (Cleaned)
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setSelectedCameraId(null)}
+                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Live Animated Canvas Video Stream */}
             <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
               <CCTVCanvasFeed
                 camera={selectedCamera}
-                hasIncident={selectedCamera.currentIncidentId !== undefined}
+                hasIncident={cctvViewOverride === 'BEFORE' ? true : (cctvViewOverride === 'AFTER' ? false : (selectedCamera.currentIncidentId !== undefined))}
+                forceCleanView={cctvViewOverride === 'AFTER'}
                 className="w-full h-full"
                 showDetails={true}
               />
@@ -220,11 +256,15 @@ export function App() {
                 <span>Coverage Target: <strong className="text-slate-200">{selectedCamera.coverageCategory.replace('_', ' ')}</strong></span>
                 <span className="mx-2">•</span>
                 <span>Inference: <strong className="text-emerald-400 font-mono">1080p 30fps AI Optical</strong></span>
+                <span className="mx-2">•</span>
+                <span className="text-[11px] text-slate-400 italic">
+                  * When mobile responder clicks 'Submit Evidence', feed automatically updates from garbage to clean pavement.
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setSelectedCameraId(null)}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition shadow-md"
+                  className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold transition shadow-md"
                 >
                   Close Stream
                 </button>
