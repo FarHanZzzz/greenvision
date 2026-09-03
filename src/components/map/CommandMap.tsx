@@ -253,23 +253,29 @@ export const CommandMap: React.FC = () => {
 
       </div>
 
-      {/* Map Legend */}
-      <div className="absolute bottom-4 left-4 z-[400] bg-slate-950/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-[11px] text-slate-300 flex items-center gap-3 shadow-xl">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
-          <span>Critical Anomaly</span>
+      {/* Map Legend - Compact 2-column card elevated to bottom-16 to guarantee zero overlap with bottom controls */}
+      <div className="absolute bottom-16 left-4 z-[400] bg-slate-950/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 text-[10px] text-slate-300 shadow-2xl w-fit">
+        <div className="text-[9px] font-mono uppercase text-slate-400 font-bold mb-1.5 tracking-wider flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>Status Legend</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-          <span>Rahim En Route</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-          <span>Awaiting Verification</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span>Cleaned & Closed</span>
+        <div className="grid grid-cols-2 gap-x-3.5 gap-y-1.5 font-medium">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse shrink-0"></span>
+            <span className="text-slate-200">Critical Anomaly</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+            <span className="text-slate-200">Rahim En Route</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+            <span className="text-slate-200">Awaiting Verify</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span className="text-slate-200">Cleaned & Closed</span>
+          </div>
         </div>
       </div>
 
