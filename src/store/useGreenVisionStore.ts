@@ -104,7 +104,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     if (found) set({ activeUser: found });
   },
 
-  selectedIncidentId: "GV-1042",
+  selectedIncidentId: null,
   setSelectedIncidentId: (id) => set({ selectedIncidentId: id }),
 
   // Null by default so no video opens automatically on site entry (Resolves user request 5)
@@ -173,8 +173,8 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
       zones: JSON.parse(JSON.stringify(CAMPUS_ZONES)),
       activityLog: JSON.parse(JSON.stringify(INITIAL_ACTIVITY_LOG)),
       notifications: JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS)),
-      selectedIncidentId: "GV-1042",
-      selectedCameraId: "GV-CAM-004",
+      selectedIncidentId: null,
+      selectedCameraId: null,
       isSimulating: false,
       simStep: 0,
       responderCoordinates: {
