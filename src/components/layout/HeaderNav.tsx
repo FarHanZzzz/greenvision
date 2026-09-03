@@ -10,7 +10,9 @@ import {
   ChevronDown, 
   CheckCircle2, 
   AlertTriangle,
-  Radio
+  Radio,
+  HelpCircle,
+  PhoneCall
 } from 'lucide-react';
 import { useGreenVisionStore, AppInterface } from '../../store/useGreenVisionStore';
 
@@ -23,6 +25,8 @@ export const HeaderNav: React.FC = () => {
   const notifications = useGreenVisionStore((s) => s.notifications);
   const markNotificationRead = useGreenVisionStore((s) => s.markNotificationRead);
   const setSelectedIncidentId = useGreenVisionStore((s) => s.setSelectedIncidentId);
+  const openContactModal = useGreenVisionStore((s) => s.openContactModal);
+  const openGuideModal = useGreenVisionStore((s) => s.openGuideModal);
 
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
@@ -57,9 +61,9 @@ export const HeaderNav: React.FC = () => {
 
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md select-none">
-      <div className="max-w-[1720px] mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-[1720px] mx-auto px-4 h-16 flex items-center justify-between gap-3">
         
-        {/* Brand & System Status */}
+        {/* Brand & System Status (UIU Dhaka) */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-900/40">
             <Radio className="w-5 h-5 text-white animate-pulse" />
@@ -75,7 +79,9 @@ export const HeaderNav: React.FC = () => {
             </div>
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              <span className="font-mono text-[11px] text-emerald-400 font-semibold">DHAKA CAMPUS — LIVE</span>
+              <span className="font-mono text-[11px] text-emerald-400 font-semibold">
+                UIU DHAKA (MADANI AVE) — LIVE
+              </span>
             </div>
           </div>
         </div>
@@ -89,9 +95,9 @@ export const HeaderNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setInterface(item.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-emerald-600 text-white shadow-md font-semibold'
+                    ? 'bg-emerald-600 text-white shadow-md font-bold'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
@@ -102,11 +108,31 @@ export const HeaderNav: React.FC = () => {
           })}
         </nav>
 
-        {/* Right Section: Time, Notifications, Role Persona */}
-        <div className="flex items-center gap-3">
+        {/* Right Section: System Guide, Buzz Mobile, Time, Notifications, Role Persona */}
+        <div className="flex items-center gap-2 sm:gap-3">
           
+          {/* System Guide & Explanations Button (Resolves "tell me what are things") */}
+          <button
+            onClick={openGuideModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 border border-slate-700 text-xs font-bold transition shadow-sm"
+            title="Interactive System Guide & Legend"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">System Guide</span>
+          </button>
+
+          {/* Quick Buzz Responder Button (01307726701) */}
+          <button
+            onClick={() => openContactModal("01307726701")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-md"
+            title="Direct Call / SMS to Rahim Uddin (+880 1307-726701)"
+          >
+            <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
+            <span className="hidden md:inline">Buzz 01307726701</span>
+          </button>
+
           {/* Live Clock */}
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/70 border border-slate-700/60 text-slate-300 text-xs font-mono">
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/70 border border-slate-700/60 text-slate-300 text-xs font-mono">
             <Clock className="w-3.5 h-3.5 text-emerald-400" />
             <span>{dhakaTime || '6:41 PM'} <span className="text-slate-500">BST</span></span>
           </div>
@@ -176,51 +202,45 @@ export const HeaderNav: React.FC = () => {
                 setShowRoleMenu(!showRoleMenu);
                 setShowNotifMenu(false);
               }}
-              className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 transition"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 transition"
             >
               <img
                 src={activeUser.avatar}
                 alt={activeUser.name}
                 className="w-7 h-7 rounded-full object-cover border border-emerald-500/50"
               />
-              <div className="text-left hidden sm:block">
+              <div className="text-left hidden lg:block">
                 <div className="text-xs font-semibold text-slate-200 leading-tight">{activeUser.name}</div>
                 <div className="text-[10px] text-emerald-400 leading-none">{activeUser.roleTitle.split('(')[0]}</div>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
             </button>
 
             {showRoleMenu && (
-              <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden py-1">
-                <div className="px-3 py-2 border-b border-slate-800 bg-slate-950/60 text-[11px] text-slate-400 uppercase font-mono">
-                  Switch Operational Persona
+              <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="p-3 border-b border-slate-800 bg-slate-950/60">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Select Active Role</span>
+                  <p className="text-xs text-slate-300 mt-0.5">Switch between perspectives to test workflows</p>
                 </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {users.map((u) => {
-                    const isSelected = activeUser.id === u.id;
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          setActiveUser(u.id);
-                          setShowRoleMenu(false);
-                          // Auto switch view to match role for intuitive presentation
-                          if (u.role === 'FIELD_RESPONDER') setInterface('RESPONDER');
-                          else if (u.role === 'CONTROL_OPERATOR' || u.role === 'SUPERVISOR') setInterface('OPERATIONS');
-                        }}
-                        className={`w-full px-3 py-2 text-left flex items-center gap-3 transition ${
-                          isSelected ? 'bg-emerald-950/60 border-l-2 border-emerald-400' : 'hover:bg-slate-800/80'
-                        }`}
-                      >
-                        <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full object-cover" />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold text-slate-200 truncate">{u.name}</div>
-                          <div className="text-[11px] text-slate-400 truncate">{u.roleTitle}</div>
-                        </div>
-                        {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>}
-                      </button>
-                    );
-                  })}
+                <div className="p-2 space-y-1">
+                  {users.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => {
+                        setActiveUser(user.id);
+                        setShowRoleMenu(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 p-2 rounded-lg text-left transition ${
+                        activeUser.id === user.id ? 'bg-emerald-600/20 border border-emerald-500/30' : 'hover:bg-slate-800'
+                      }`}
+                    >
+                      <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full object-cover" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-slate-200 truncate">{user.name}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{user.roleTitle}</div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

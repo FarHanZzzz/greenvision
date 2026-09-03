@@ -25,7 +25,10 @@ import {
   PhoneCall,
   Send,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  ExternalLink,
+  Map as MapIcon,
+  Smartphone
 } from 'lucide-react';
 import { useGreenVisionStore } from '../../store/useGreenVisionStore';
 import { IncidentRecord, IncidentStatus } from '../../types';
@@ -93,15 +96,15 @@ const cameraIcon = L.divIcon({
 const responderIcon = L.divIcon({
   className: 'custom-responder-marker',
   html: `
-    <div style="width: 30px; height: 30px; border-radius: 50%; background: #0284C7; border: 2px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(2,132,199,0.6); animation: bounce 2s infinite;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <div style="width: 32px; height: 32px; border-radius: 50%; background: #0284C7; border: 2.5px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(2,132,199,0.7); animation: bounce 2s infinite;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
       </svg>
     </div>
   `,
-  iconSize: [30, 30],
-  iconAnchor: [15, 15]
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
 });
 
 export const CommandMap: React.FC = () => {
@@ -117,44 +120,75 @@ export const CommandMap: React.FC = () => {
   const reassignIncident = useGreenVisionStore((s) => s.reassignIncident);
   const escalateIncident = useGreenVisionStore((s) => s.escalateIncident);
   const approveResolution = useGreenVisionStore((s) => s.approveResolution);
+  const openContactModal = useGreenVisionStore((s) => s.openContactModal);
 
-  // Layer Toggles (PRD Section 19)
+  // Layer Toggles
   const [showCameras, setShowCameras] = useState(true);
   const [showWaste, setShowWaste] = useState(true);
   const [showWater, setShowWater] = useState(true);
-  const [showTraffic, setShowTraffic] = useState(true);
   const [showTeams, setShowTeams] = useState(true);
   const [showZones, setShowZones] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
 
-  // Contact modal state
-  const [contactMessageSent, setContactMessageSent] = useState(false);
+  // Map Tile Style: OSM, CartoDB, or Satellite (PRD Section 19)
+  const [mapStyle, setMapStyle] = useState<'CARTO' | 'OSM' | 'SATELLITE'>('OSM');
 
-  // Selected incident details for drawer
+  const tileUrls = {
+    CARTO: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    OSM: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    SATELLITE: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+  };
+
   const selectedIncident = incidents.find(i => i.id === selectedIncidentId);
 
-  // Filtered incidents based on active layer toggles
   const visibleIncidents = incidents.filter(i => {
     if (!showWaste && (i.category === 'WASTE_ACCUMULATION' || i.category === 'BIN_OVERFLOW' || i.category === 'ILLEGAL_DUMPING')) return false;
     if (!showWater && i.category === 'WATERLOGGING') return false;
-    if (!showTraffic && i.category === 'TRAFFIC_CONGESTION') return false;
     return true;
   });
 
   return (
-    <div className="relative w-full h-[640px] rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-slate-900">
+    <div className="relative w-full h-[580px] rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-slate-900">
       
       {/* Map Control / Layer Toggle HUD */}
-      <div className="absolute top-4 left-4 z-[400] flex flex-wrap items-center gap-2 bg-slate-950/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-800 text-xs shadow-xl">
-        <span className="text-[11px] font-mono font-semibold text-slate-400 px-2 flex items-center gap-1.5">
+      <div className="absolute top-4 left-4 z-[400] flex flex-wrap items-center gap-2 bg-slate-950/90 backdrop-blur-md p-2 rounded-2xl border border-slate-800 text-xs shadow-2xl max-w-[calc(100%-32px)]">
+        <span className="text-[11px] font-mono font-bold text-emerald-400 px-2 flex items-center gap-1.5">
           <Layers className="w-3.5 h-3.5 text-emerald-400" />
-          <span>LAYERS</span>
+          <span>UIU DHAKA GRID</span>
         </span>
+
+        {/* Map Type Switcher */}
+        <div className="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-700">
+          <button
+            onClick={() => setMapStyle('OSM')}
+            className={`px-2 py-0.5 rounded text-[11px] font-bold transition ${
+              mapStyle === 'OSM' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            OSM Streets
+          </button>
+          <button
+            onClick={() => setMapStyle('CARTO')}
+            className={`px-2 py-0.5 rounded text-[11px] font-bold transition ${
+              mapStyle === 'CARTO' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Voyager
+          </button>
+          <button
+            onClick={() => setMapStyle('SATELLITE')}
+            className={`px-2 py-0.5 rounded text-[11px] font-bold transition ${
+              mapStyle === 'SATELLITE' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Satellite
+          </button>
+        </div>
 
         <button
           onClick={() => setShowCameras(!showCameras)}
           className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
-            showCameras ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40' : 'text-slate-500 hover:text-slate-300'
+            showCameras ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
           Cameras (16)
@@ -162,7 +196,7 @@ export const CommandMap: React.FC = () => {
         <button
           onClick={() => setShowWaste(!showWaste)}
           className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
-            showWaste ? 'bg-slate-800 text-amber-400 border border-amber-500/40' : 'text-slate-500 hover:text-slate-300'
+            showWaste ? 'bg-slate-800 text-amber-400 border border-amber-500/40 font-bold' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
           Waste Events
@@ -170,7 +204,7 @@ export const CommandMap: React.FC = () => {
         <button
           onClick={() => setShowWater(!showWater)}
           className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
-            showWater ? 'bg-slate-800 text-sky-400 border border-sky-500/40' : 'text-slate-500 hover:text-slate-300'
+            showWater ? 'bg-slate-800 text-sky-400 border border-sky-500/40 font-bold' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
           Waterlogging
@@ -178,7 +212,7 @@ export const CommandMap: React.FC = () => {
         <button
           onClick={() => setShowTeams(!showTeams)}
           className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
-            showTeams ? 'bg-slate-800 text-indigo-400 border border-indigo-500/40' : 'text-slate-500 hover:text-slate-300'
+            showTeams ? 'bg-slate-800 text-indigo-400 border border-indigo-500/40 font-bold' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
           Field Teams
@@ -190,60 +224,72 @@ export const CommandMap: React.FC = () => {
           }`}
         >
           <Flame className="w-3 h-3" />
-          <span>Hotspot Heatmap</span>
+          <span>Hotspots</span>
         </button>
+
+        {/* Direct Google Maps Link for UIU Dhaka */}
+        <a
+          href="https://www.google.com/maps?q=23.798038,90.449842"
+          target="_blank"
+          rel="noreferrer"
+          className="px-2.5 py-1 rounded-lg bg-sky-950 text-sky-300 hover:bg-sky-900 border border-sky-700/60 font-medium flex items-center gap-1 transition"
+          title="Open exact UIU campus coordinates on Google Maps"
+        >
+          <ExternalLink className="w-3 h-3 text-sky-400" />
+          <span>Google Maps</span>
+        </a>
       </div>
 
-      {/* Map Legend (PRD Section 20) */}
-      <div className="absolute bottom-4 left-4 z-[400] bg-slate-950/85 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 text-[11px] text-slate-300 flex items-center gap-3 shadow-lg">
+      {/* Map Legend */}
+      <div className="absolute bottom-4 left-4 z-[400] bg-slate-950/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-[11px] text-slate-300 flex items-center gap-3 shadow-xl">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
-          <span>Critical / Escalated</span>
+          <span>Critical Anomaly</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-          <span>Responding</span>
+          <span>Rahim En Route</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-          <span>Awaiting Approval</span>
+          <span>Awaiting Verification</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span>Resolved</span>
+          <span>Cleaned & Closed</span>
         </div>
       </div>
 
-      {/* Leaflet Map Component */}
+      {/* Leaflet Map: Centered at United International University (UIU), Madani Ave, Dhaka */}
       <MapContainer
-        center={[23.8155, 90.4248]}
-        zoom={16}
+        center={[23.7980, 90.4498]}
+        zoom={17}
         scrollWheelZoom={true}
         className="w-full h-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> | United International University, Dhaka'
+          url={tileUrls[mapStyle]}
           maxZoom={19}
         />
 
-        {/* Hotspot Density Heat Circles (PRD Section 19 & 34) */}
+        {/* Hotspot Density Heat Circles around UIU Campus */}
         {showHeatmap && (
           <>
             <Circle
-              center={[23.8172, 90.4248]} // Gate 2
-              radius={70}
-              pathOptions={{ fillColor: '#EF4444', fillOpacity: 0.45, color: '#DC2626', weight: 1.5 }}
+              center={[23.7988, 90.4506]} // UIU Gate 2 Hotspot
+              radius={60}
+              pathOptions={{ fillColor: '#EF4444', fillOpacity: 0.5, color: '#DC2626', weight: 2 }}
             />
             <Circle
-              center={[23.8152, 90.4258]} // Cafeteria
-              radius={50}
-              pathOptions={{ fillColor: '#F97316', fillOpacity: 0.35, color: '#EA580C', weight: 1.5 }}
-            />
-            <Circle
-              center={[23.8136, 90.4250]} // Parking South
+              center={[23.7975, 90.4506]} // UIU Cafeteria
               radius={45}
-              pathOptions={{ fillColor: '#F59E0B', fillOpacity: 0.3, color: '#D97706', weight: 1.5 }}
+              pathOptions={{ fillColor: '#F97316', fillOpacity: 0.4, color: '#EA580C', weight: 2 }}
+            />
+            <Circle
+              center={[23.7967, 90.4492]} // UIU Parking South
+              radius={40}
+              pathOptions={{ fillColor: '#F59E0B', fillOpacity: 0.35, color: '#D97706', weight: 1.5 }}
             />
           </>
         )}
@@ -255,10 +301,10 @@ export const CommandMap: React.FC = () => {
             positions={zone.polygonBounds}
             pathOptions={{
               color: zone.riskLevel === 'CRITICAL' ? '#EF4444' : zone.riskLevel === 'HIGH' ? '#F97316' : '#10B981',
-              weight: 1.5,
+              weight: 2,
               dashArray: '4, 4',
               fillColor: zone.riskLevel === 'CRITICAL' ? '#EF4444' : '#10B981',
-              fillOpacity: zone.riskLevel === 'CRITICAL' ? 0.12 : 0.05
+              fillOpacity: zone.riskLevel === 'CRITICAL' ? 0.15 : 0.06
             }}
           >
             <Popup>
@@ -266,7 +312,7 @@ export const CommandMap: React.FC = () => {
                 <p className="font-bold text-slate-800">{zone.name}</p>
                 <p className="text-[11px] text-slate-500">{zone.description}</p>
                 <div className="mt-1 flex items-center justify-between text-[10px]">
-                  <span className="font-semibold text-emerald-700">{zone.cameraCount} Cameras</span>
+                  <span className="font-semibold text-emerald-700">{zone.cameraCount} CCTV Nodes</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-100 font-bold">{zone.riskLevel} RISK</span>
                 </div>
               </div>
@@ -274,7 +320,7 @@ export const CommandMap: React.FC = () => {
           </Polygon>
         ))}
 
-        {/* CCTV Camera Markers */}
+        {/* 16 CCTV Camera Markers */}
         {showCameras && cameras.map((cam) => (
           <Marker
             key={cam.id}
@@ -285,7 +331,7 @@ export const CommandMap: React.FC = () => {
             }}
           >
             <Popup>
-              <div className="p-1 text-xs">
+              <div className="p-1 text-xs min-w-[200px]">
                 <div className="flex items-center gap-1.5 font-bold text-slate-900">
                   <Video className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{cam.id}: {cam.name}</span>
@@ -293,24 +339,36 @@ export const CommandMap: React.FC = () => {
                 <p className="text-[11px] text-slate-500 mt-0.5">{cam.locationName}</p>
                 <div className="mt-2 pt-1 border-t border-slate-200 flex items-center justify-between text-[10px]">
                   <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">{cam.status}</span>
-                  <span className="text-slate-500 font-mono">{cam.feedResolution}</span>
+                  <button
+                    onClick={() => setSelectedCameraId(cam.id)}
+                    className="text-emerald-700 font-bold hover:underline"
+                  >
+                    Open Live Feed
+                  </button>
                 </div>
               </div>
             </Popup>
           </Marker>
         ))}
 
-        {/* Responding Field Worker (Dynamic GPS Movement) */}
+        {/* Responding Field Worker Rahim Uddin (Dynamic Live GPS Tracking at UIU) */}
         {showTeams && (
           <Marker
-            position={responderCoordinates["usr-resp-1"] || [23.8145, 90.4230]}
+            position={responderCoordinates["usr-resp-1"] || [23.7965, 90.4503]}
             icon={responderIcon}
           >
             <Popup>
               <div className="p-1 text-xs">
                 <p className="font-bold text-sky-900">Rahim Uddin (Lead Responder)</p>
-                <p className="text-[11px] text-slate-500">Cleaning Team B</p>
-                <p className="text-[10px] text-sky-600 mt-1 font-semibold">Active GPS Tracking Position</p>
+                <p className="text-[11px] text-slate-500">Cleaning Team B • Active Unit</p>
+                <p className="text-[10px] text-sky-600 mt-1 font-mono font-semibold">📱 +880 1307-726701</p>
+                <button
+                  onClick={() => openContactModal("01307726701")}
+                  className="mt-1 px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px] flex items-center gap-1"
+                >
+                  <PhoneCall className="w-3 h-3" />
+                  <span>Buzz / Call Rahim</span>
+                </button>
               </div>
             </Popup>
           </Marker>
@@ -327,7 +385,7 @@ export const CommandMap: React.FC = () => {
             }}
           >
             <Popup>
-              <div className="p-1 text-xs min-w-[180px]">
+              <div className="p-1 text-xs min-w-[190px]">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-900">{inc.id}</span>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
@@ -339,7 +397,7 @@ export const CommandMap: React.FC = () => {
                 <p className="font-semibold text-slate-700 mt-1 text-[11px]">{inc.categoryLabel}</p>
                 <p className="text-[10px] text-slate-500">{inc.locationName}</p>
                 <div className="mt-2 pt-1.5 border-t border-slate-200 flex items-center justify-between text-[10px]">
-                  <span className="font-mono text-slate-600">AI: {Math.round(inc.aiConfidence * 100)}% Conf</span>
+                  <span className="font-mono text-slate-600">AI: {Math.round(inc.aiConfidence * 100)}%</span>
                   <button
                     onClick={() => setSelectedIncidentId(inc.id)}
                     className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-0.5"
@@ -356,7 +414,7 @@ export const CommandMap: React.FC = () => {
 
       {/* Slide-Over Incident Details Drawer (PRD Section 21) */}
       {selectedIncident && (
-        <div className="absolute top-0 right-0 bottom-0 w-96 z-[450] bg-slate-900/95 backdrop-blur-md border-l border-slate-800 text-white p-4 shadow-2xl flex flex-col justify-between overflow-y-auto">
+        <div className="absolute top-0 right-0 bottom-0 w-96 z-[400] bg-slate-950/95 backdrop-blur-md border-l border-slate-800 text-white p-4 shadow-2xl flex flex-col justify-between overflow-y-auto">
           <div>
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -367,7 +425,7 @@ export const CommandMap: React.FC = () => {
                   selectedIncident.priority === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
                   'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                 }`}>
-                  {selectedIncident.priority}
+                  {selectedIncident.priority} PRIORITY
                 </span>
               </div>
               <button
@@ -386,21 +444,21 @@ export const CommandMap: React.FC = () => {
 
             {/* Status & SLA Pill */}
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60">
+              <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
                 <span className="text-[10px] text-slate-400 uppercase font-mono">STATUS</span>
                 <div className="font-bold text-emerald-400 mt-0.5">{selectedIncident.status}</div>
               </div>
-              <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60">
-                <span className="text-[10px] text-slate-400 uppercase font-mono">AI CONFIDENCE</span>
-                <div className="font-bold text-slate-200 mt-0.5">{Math.round(selectedIncident.aiConfidence * 100)}% Verified</div>
+              <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
+                <span className="text-[10px] text-slate-400 uppercase font-mono">AI INFERENCE</span>
+                <div className="font-bold text-slate-200 mt-0.5">{Math.round(selectedIncident.aiConfidence * 100)}% Confidence</div>
               </div>
             </div>
 
-            {/* Before / After Evidence Preview (PRD Section 31) */}
+            {/* Real Photographic Before / After Evidence (PRD Section 31) */}
             <div className="mt-4">
               <div className="text-[11px] font-mono text-slate-400 uppercase mb-1.5 flex items-center justify-between">
-                <span>Visual Evidence</span>
-                <span className="text-emerald-400 text-[10px]">CCTV SNAPSHOT</span>
+                <span>Visual Photographic Evidence</span>
+                <span className="text-emerald-400 text-[10px]">HIGH RESOLUTION</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -408,19 +466,19 @@ export const CommandMap: React.FC = () => {
                   <img
                     src={selectedIncident.beforeEvidenceUrl}
                     alt="Before Evidence"
-                    className="w-full h-24 object-cover rounded-lg border border-red-500/40"
+                    className="w-full h-24 object-cover rounded-xl border border-red-500/40 shadow"
                   />
                 </div>
                 <div>
-                  <div className="text-[10px] text-slate-400 mb-1 font-semibold">AFTER (RESOLVED)</div>
+                  <div className="text-[10px] text-slate-400 mb-1 font-semibold">AFTER (CLEANED)</div>
                   {selectedIncident.afterEvidenceUrl ? (
                     <img
                       src={selectedIncident.afterEvidenceUrl}
                       alt="After Evidence"
-                      className="w-full h-24 object-cover rounded-lg border border-emerald-500/40"
+                      className="w-full h-24 object-cover rounded-xl border border-emerald-500/40 shadow"
                     />
                   ) : (
-                    <div className="w-full h-24 rounded-lg border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 text-[10px] p-2 text-center">
+                    <div className="w-full h-24 rounded-xl border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 text-[10px] p-2 text-center">
                       <Clock className="w-4 h-4 text-slate-600 mb-1" />
                       <span>Pending resolution submission</span>
                     </div>
@@ -430,27 +488,23 @@ export const CommandMap: React.FC = () => {
             </div>
 
             {/* Assigned Personnel Info */}
-            <div className="mt-4 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-xs">
+            <div className="mt-4 bg-slate-900 p-3 rounded-2xl border border-slate-800 text-xs space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-[11px]">
                 <span>Assigned Unit:</span>
                 <span className="font-semibold text-slate-200">{selectedIncident.assignedDepartment}</span>
               </div>
-              <div className="flex items-center justify-between text-slate-400 text-[11px] mt-1.5">
+              <div className="flex items-center justify-between text-slate-400 text-[11px]">
                 <span>Lead Responder:</span>
                 <span className="font-semibold text-emerald-400">{selectedIncident.assignedResponderName || "Unassigned"}</span>
               </div>
-            </div>
-
-            {/* Simulated Contact Drawer */}
-            {contactMessageSent && (
-              <div className="mt-3 p-2 bg-emerald-950/60 border border-emerald-500/40 rounded-lg text-emerald-300 text-[11px] flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Priority SMS dispatched to {selectedIncident.assignedResponderName || 'Cleaning Team B'}</span>
+              <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                <span>Contact Phone:</span>
+                <span className="font-mono text-sky-400 font-bold">01307726701</span>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Full Operational Action Set (PRD Section 21) */}
+          {/* Operational Action Buttons */}
           <div className="pt-4 border-t border-slate-800 space-y-2">
             
             {/* Step 1 Actions */}
@@ -458,14 +512,14 @@ export const CommandMap: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => confirmIncident(selectedIncident.id)}
-                  className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4" />
                   <span>Confirm Event</span>
                 </button>
                 <button
-                  onClick={() => confirmIncident(selectedIncident.id, 'HIGH', 'Flagged for quick triage')}
-                  className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition"
+                  onClick={() => confirmIncident(selectedIncident.id, 'HIGH', 'Flagged for rapid clean')}
+                  className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition"
                 >
                   Reject False
                 </button>
@@ -476,10 +530,10 @@ export const CommandMap: React.FC = () => {
             {selectedIncident.status === 'CONFIRMED' && (
               <button
                 onClick={() => assignIncident(selectedIncident.id, "usr-resp-1", "usr-sup-1")}
-                className="w-full py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+                className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition"
               >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Dispatch Rahim (Team B)</span>
+                <UserCheck className="w-4 h-4" />
+                <span>Dispatch Rahim (01307726701)</span>
               </button>
             )}
 
@@ -487,39 +541,36 @@ export const CommandMap: React.FC = () => {
             {selectedIncident.status === 'PENDING_APPROVAL' && (
               <button
                 onClick={() => approveResolution(selectedIncident.id)}
-                className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-4 h-4" />
                 <span>Approve & Close</span>
               </button>
             )}
 
-            {/* Secondary Operational Actions (Escalate, Reassign, Contact) */}
+            {/* Contact & Escalate Actions */}
             {selectedIncident.status !== 'CLOSED' && (
               <div className="grid grid-cols-3 gap-1.5 text-[11px]">
                 <button
-                  onClick={() => escalateIncident(selectedIncident.id, 'SLA warning - urgent attention requested.')}
-                  className="py-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-800/60 font-medium transition"
+                  onClick={() => escalateIncident(selectedIncident.id, 'Urgent containment requested at UIU Gate 2.')}
+                  className="py-2 rounded-xl bg-red-950/70 hover:bg-red-900/70 text-red-300 border border-red-800/60 font-semibold transition"
                   title="Escalate Priority"
                 >
                   Escalate
                 </button>
                 <button
                   onClick={() => reassignIncident(selectedIncident.id, "usr-resp-2", "Workload rebalance")}
-                  className="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition"
-                  title="Reassign to Faruk Mia"
+                  className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition"
+                  title="Reassign"
                 >
                   Reassign
                 </button>
                 <button
-                  onClick={() => {
-                    setContactMessageSent(true);
-                    setTimeout(() => setContactMessageSent(false), 3000);
-                  }}
-                  className="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition flex items-center justify-center gap-1"
-                  title="Contact Team via SMS"
+                  onClick={() => openContactModal("01307726701")}
+                  className="py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 font-bold transition flex items-center justify-center gap-1 shadow"
+                  title="Call or SMS 01307726701"
                 >
-                  <PhoneCall className="w-3 h-3 text-sky-400" />
+                  <PhoneCall className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Contact</span>
                 </button>
               </div>
@@ -527,10 +578,10 @@ export const CommandMap: React.FC = () => {
 
             <button
               onClick={() => setSelectedCameraId(selectedIncident.cameraId)}
-              className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center gap-1.5 transition"
+              className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center gap-1.5 transition"
             >
               <Eye className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Inspect Camera Feed ({selectedIncident.cameraId})</span>
+              <span>Inspect Live Feed ({selectedIncident.cameraId})</span>
             </button>
           </div>
         </div>

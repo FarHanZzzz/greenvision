@@ -3,202 +3,203 @@ import {
   CameraRecord, 
   UserProfile, 
   IncidentRecord, 
-  ActivityEvent,
-  NotificationItem
+  ActivityEvent, 
+  NotificationItem 
 } from '../types';
 
-// Realistic SVG Data URIs for Before & After evidence images
+// Realistic High-Resolution Photographic Evidence Images (Resolves Image 4 / PRD Section 31)
 export const EVIDENCE_IMAGES = {
-  wasteBefore: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23334155'/%3E%3Crect y='260' width='600' height='140' fill='%231e293b'/%3E%3Cpath d='M100 240 L160 210 L280 270 L120 310 Z' fill='%23475569'/%3E%3Cpath d='M220 280 Q250 210 290 270 Q340 220 370 290 Q300 320 220 280' fill='%231e3a8a'/%3E%3Ccircle cx='240' cy='260' r='35' fill='%230f172a' opacity='0.9'/%3E%3Ccircle cx='290' cy='250' r='40' fill='%231e293b' opacity='0.9'/%3E%3Ccircle cx='340' cy='270' r='30' fill='%230284c7' opacity='0.8'/%3E%3Cpath d='M180 300 L210 270 L250 310 Z' fill='%23e2e8f0' opacity='0.7'/%3E%3Cpath d='M320 290 L360 280 L350 320 Z' fill='%23fbbf24' opacity='0.8'/%3E%3Crect x='200' y='190' width='180' height='120' fill='none' stroke='%23ef4444' stroke-width='3' stroke-dasharray='6'/%3E%3Crect x='200' y='165' width='140' height='24' fill='%23ef4444' rx='3'/%3E%3Ctext x='206' y='181' fill='white' font-family='monospace' font-size='11' font-weight='bold'%3EAI: WASTE ACCUMULATION 94%25%3C/text%3E%3Ctext x='20' y='40' fill='%2394a3b8' font-family='monospace' font-size='14'%3ECCTV GV-CAM-004 [GATE 2 NORTH]%3C/text%3E%3C/svg%3E",
-  wasteAfter: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23334155'/%3E%3Crect y='260' width='600' height='140' fill='%231e293b'/%3E%3Cpath d='M100 240 L160 210 L280 270 L120 310 Z' fill='%23475569'/%3E%3Crect x='240' y='210' width='50' height='70' rx='6' fill='%23059669'/%3E%3Cpath d='M235 210 L295 210 L285 200 L245 200 Z' fill='%23047857'/%3E%3Crect x='190' y='170' width='160' height='26' fill='%2310b981' rx='4'/%3E%3Ctext x='196' y='187' fill='white' font-family='monospace' font-size='11' font-weight='bold'%3ERESOLUTION VERIFIED%3C/text%3E%3Ctext x='20' y='40' fill='%2394a3b8' font-family='monospace' font-size='14'%3ECCTV GV-CAM-004 [AREA SANITIZED]%3C/text%3E%3C/svg%3E",
-  binBefore: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%231e293b'/%3E%3Crect x='220' y='160' width='120' height='170' rx='8' fill='%23334155'/%3E%3Cpath d='M210 160 L350 160 L340 140 L220 140 Z' fill='%23475569'/%3E%3Ccircle cx='260' cy='135' r='25' fill='%23ef4444' opacity='0.8'/%3E%3Ccircle cx='300' cy='130' r='30' fill='%23f59e0b' opacity='0.8'/%3E%3Cpath d='M200 330 L360 330 L340 370 L180 370 Z' fill='%230f172a'/%3E%3Crect x='190' y='100' width='180' height='240' fill='none' stroke='%23f97316' stroke-width='3' stroke-dasharray='4'/%3E%3Ctext x='20' y='40' fill='%2394a3b8' font-family='monospace' font-size='14'%3ECCTV GV-CAM-006 [CAFETERIA EAST]%3C/text%3E%3C/svg%3E",
-  binAfter: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%231e293b'/%3E%3Crect x='220' y='160' width='120' height='170' rx='8' fill='%23059669'/%3E%3Cpath d='M210 160 L350 160 L330 150 L230 150 Z' fill='%23047857'/%3E%3Crect x='200' y='100' width='160' height='26' fill='%2310b981' rx='4'/%3E%3Ctext x='206' y='117' fill='white' font-family='monospace' font-size='11' font-weight='bold'%3EBIN EMPTIED %26 CLEANED%3C/text%3E%3Ctext x='20' y='40' fill='%2394a3b8' font-family='monospace' font-size='14'%3ECCTV GV-CAM-006 [NORMAL STATUS]%3C/text%3E%3C/svg%3E",
-  waterBefore: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%230f172a'/%3E%3Cellipse cx='300' cy='280' rx='220' ry='70' fill='%231e3a8a' opacity='0.7'/%3E%3Cellipse cx='280' cy='280' rx='160' ry='45' fill='%2338bdf8' opacity='0.4'/%3E%3Crect x='120' y='210' width='360' height='140' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-dasharray='5'/%3E%3Ctext x='20' y='40' fill='%2394a3b8' font-family='monospace' font-size='14'%3ECCTV GV-CAM-009 [PARKING SOUTH DRAINAGE]%3C/text%3E%3C/svg%3E",
-  waterAfter: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%230f172a'/%3E%3Crect y='220' width='600' height='180' fill='%231e293b'/%3E%3Ctext x='200' y='310' fill='%2310b981' font-family='sans-serif' font-size='16' font-weight='bold'%3EPUMP DRAINAGE COMPLETED%3C/text%3E%3Ctext x='20' y='40' fill='%2394a3b8' font-family='monospace' font-size='14'%3ECCTV GV-CAM-009 [CLEARED]%3C/text%3E%3C/svg%3E"
+  wasteBefore: "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80", // Real waste pile on pavement
+  wasteAfter: "https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80", // Clean sanitized pavement
+  binBefore: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=800&q=80", // Overflowing trash bin
+  binAfter: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80", // Clean emptied bins
+  waterBefore: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=800&q=80", // Rain waterlogged street
+  waterAfter: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=800&q=80" // Dry clean road
 };
 
-// 10 Campus Zones in Dhaka (Centroid around 23.8150, 90.4250)
+// 10 Campus Zones: United International University (UIU), Madani Avenue, Badda, Dhaka 1212
+// Coordinates Centroid: 23.7980, 90.4498
 export const CAMPUS_ZONES: OperationalZone[] = [
   {
     id: "zone-1",
-    name: "Main Campus Gate (Zone 1)",
-    code: "Z-MG",
-    centerCoordinates: [23.8154, 90.4225],
+    name: "UIU Main Gate (Madani Avenue)",
+    code: "UIU-Z1",
+    centerCoordinates: [23.7984, 90.4492],
     polygonBounds: [
-      [23.8160, 90.4218],
-      [23.8162, 90.4232],
-      [23.8148, 90.4233],
-      [23.8146, 90.4219]
+      [23.7988, 90.4488],
+      [23.7989, 90.4497],
+      [23.7979, 90.4498],
+      [23.7978, 90.4489]
     ],
     cameraCount: 2,
     activeIncidentCount: 0,
     riskLevel: "LOW",
-    description: "Primary vehicular & pedestrian security checkpoint",
-    recommendedAction: "Maintain standard security schedule"
+    description: "Primary entrance from 100-ft Madani Avenue with security guardhouse & vehicle gates",
+    recommendedAction: "Maintain standard security schedule & traffic monitoring"
   },
   {
     id: "zone-2",
-    name: "Gate 2 & Perimeter (Zone 2)",
-    code: "Z-G2",
-    centerCoordinates: [23.8172, 90.4248],
+    name: "Gate 2 & North Perimeter (Vendor Hotspot)",
+    code: "UIU-Z2",
+    centerCoordinates: [23.7988, 90.4506],
     polygonBounds: [
-      [23.8178, 90.4238],
-      [23.8180, 90.4258],
-      [23.8165, 90.4259],
-      [23.8164, 90.4239]
+      [23.7993, 90.4500],
+      [23.7994, 90.4513],
+      [23.7983, 90.4514],
+      [23.7982, 90.4501]
     ],
     cameraCount: 2,
     activeIncidentCount: 1,
     riskLevel: "CRITICAL",
-    description: "Secondary perimeter exit with heavy vendor traffic and evening waste buildup",
-    recommendedAction: "Increase cleaning sweep frequency between 4:00 PM – 7:00 PM; add dual 240L bins"
+    description: "Perimeter boundary along Madani Ave with high evening street food vendor traffic & waste spillage",
+    recommendedAction: "Increase cleaning sweep frequency between 4:00 PM – 7:00 PM; deploy dual 240L wheelie bins"
   },
   {
     id: "zone-3",
-    name: "Academic Block A (Engineering)",
-    code: "Z-ABA",
-    centerCoordinates: [23.8158, 90.4242],
+    name: "UIU Academic Complex (Engineering)",
+    code: "UIU-Z3",
+    centerCoordinates: [23.7978, 90.4493],
     polygonBounds: [
-      [23.8164, 90.4235],
-      [23.8165, 90.4250],
-      [23.8151, 90.4251],
-      [23.8150, 90.4236]
+      [23.7982, 90.4489],
+      [23.7983, 90.4498],
+      [23.7973, 90.4499],
+      [23.7972, 90.4490]
     ],
     cameraCount: 2,
     activeIncidentCount: 0,
     riskLevel: "LOW",
-    description: "Multistory classrooms, faculty offices, and front courtyard",
-    recommendedAction: "Routine checks between class transitions"
+    description: "CSE, EEE, and Civil Engineering faculty blocks, front courtyard, and central atrium",
+    recommendedAction: "Routine checks during 15-minute inter-class transitions"
   },
   {
     id: "zone-4",
-    name: "Academic Block B (Business & Arts)",
-    code: "Z-ABB",
-    centerCoordinates: [23.8146, 90.4244],
+    name: "UIU Academic Complex (Business & Humanities)",
+    code: "UIU-Z4",
+    centerCoordinates: [23.7974, 90.4498],
     polygonBounds: [
-      [23.8152, 90.4236],
-      [23.8153, 90.4252],
-      [23.8139, 90.4253],
-      [23.8138, 90.4237]
+      [23.7977, 90.4493],
+      [23.7978, 90.4503],
+      [23.7969, 90.4504],
+      [23.7968, 90.4494]
     ],
     cameraCount: 2,
     activeIncidentCount: 0,
     riskLevel: "LOW",
-    description: "Lecture halls, study lounges, and student advisory center",
-    recommendedAction: "Monitor foyer bins post-lunch hours"
+    description: "School of Business, library entrance, auditorium foyer, and student career center",
+    recommendedAction: "Monitor foyer recycling receptacles post-lecture periods"
   },
   {
     id: "zone-5",
-    name: "Central Cafeteria & Food Court",
-    code: "Z-CAF",
-    centerCoordinates: [23.8152, 90.4258],
+    name: "UIU Student Cafeteria & Food Court",
+    code: "UIU-Z5",
+    centerCoordinates: [23.7975, 90.4506],
     polygonBounds: [
-      [23.8159, 90.4251],
-      [23.8160, 90.4267],
-      [23.8145, 90.4268],
-      [23.8144, 90.4252]
+      [23.7979, 90.4502],
+      [23.7980, 90.4511],
+      [23.7970, 90.4512],
+      [23.7969, 90.4503]
     ],
     cameraCount: 2,
     activeIncidentCount: 1,
     riskLevel: "HIGH",
-    description: "High foot-traffic dining area with frequent packaging waste",
-    recommendedAction: "Continuous 30-min empty cycle during 12:30 PM – 3:00 PM lunch peak"
+    description: "High-density student dining terrace, tea stalls, and fast-food kiosks",
+    recommendedAction: "Continuous 30-min bin empty cycle during 12:30 PM – 3:00 PM peak lunch rush"
   },
   {
     id: "zone-6",
-    name: "Parking North (Faculty)",
-    code: "Z-PKN",
-    centerCoordinates: [23.8168, 90.4265],
+    name: "UIU Sports Arena & Playground",
+    code: "UIU-Z6",
+    centerCoordinates: [23.7985, 90.4512],
     polygonBounds: [
-      [23.8175, 90.4257],
-      [23.8176, 90.4273],
-      [23.8161, 90.4274],
-      [23.8160, 90.4258]
+      [23.7990, 90.4507],
+      [23.7991, 90.4520],
+      [23.7980, 90.4521],
+      [23.7979, 90.4508]
     ],
     cameraCount: 1,
     activeIncidentCount: 0,
     riskLevel: "LOW",
-    description: "Covered car park and EV charging stalls",
-    recommendedAction: "Check oil spots and pavement cleanliness weekly"
+    description: "Football turf, cricket nets, outdoor volleyball court, and spectator bleachers",
+    recommendedAction: "Post-match grounds cleanup sweeps on tournament afternoons"
   },
   {
     id: "zone-7",
-    name: "Parking South & Bus Bay",
-    code: "Z-PKS",
-    centerCoordinates: [23.8136, 90.4250],
+    name: "Parking South & Student Bus Bay",
+    code: "UIU-Z7",
+    centerCoordinates: [23.7967, 90.4492],
     polygonBounds: [
-      [23.8143, 90.4241],
-      [23.8144, 90.4260],
-      [23.8128, 90.4261],
-      [23.8127, 90.4242]
+      [23.7971, 90.4486],
+      [23.7972, 90.4497],
+      [23.7962, 90.4498],
+      [23.7961, 90.4487]
     ],
     cameraCount: 2,
     activeIncidentCount: 0,
     riskLevel: "MEDIUM",
-    description: "Student bus bay and motorcycle parking; susceptible to monsoon waterlogging",
-    recommendedAction: "Inspect catch-basins and drainage pump prior to forecasted rain"
+    description: "Campus shuttle bus loop, motorcycle parking, and low-lying ramp susceptible to monsoon ponding",
+    recommendedAction: "Inspect catch-basins and sump pump prior to forecasted monsoon downpours"
   },
   {
     id: "zone-8",
-    name: "Central Waste Collection Hub",
-    code: "Z-WST",
-    centerCoordinates: [23.8170, 90.4226],
+    name: "Central Waste & Recycling Depot",
+    code: "UIU-Z8",
+    centerCoordinates: [23.7966, 90.4504],
     polygonBounds: [
-      [23.8176, 90.4219],
-      [23.8177, 90.4233],
-      [23.8163, 90.4234],
-      [23.8162, 90.4220]
+      [23.7970, 90.4499],
+      [23.7971, 90.4509],
+      [23.7961, 90.4510],
+      [23.7960, 90.4500]
     ],
     cameraCount: 2,
     activeIncidentCount: 0,
     riskLevel: "MEDIUM",
-    description: "Segregated dumpsters, organic composter, and municipal truck loading dock",
-    recommendedAction: "Enforce nighttime compaction and odor bio-spray"
+    description: "Segregated composter, sorting yard, and DNCC municipal waste truck collection ramp",
+    recommendedAction: "Enforce evening compaction and odor-neutralizing bio-spraying"
   },
   {
     id: "zone-9",
-    name: "Service & Delivery Road",
-    code: "Z-SVR",
-    centerCoordinates: [23.8142, 90.4224],
+    name: "Campus Logistics & Service Road",
+    code: "UIU-Z9",
+    centerCoordinates: [23.7971, 90.4488],
     polygonBounds: [
-      [23.8149, 90.4218],
-      [23.8150, 90.4230],
-      [23.8134, 90.4231],
-      [23.8133, 90.4219]
+      [23.7975, 90.4483],
+      [23.7976, 90.4492],
+      [23.7966, 90.4493],
+      [23.7965, 90.4484]
     ],
     cameraCount: 1,
     activeIncidentCount: 0,
     riskLevel: "LOW",
-    description: "Rear supply logistics route for canteen & maintenance supplies",
-    recommendedAction: "Monitor unloading speeds to avoid blocking access"
+    description: "Rear supply logistics lane for cafeteria provisions and maintenance equipment",
+    recommendedAction: "Monitor unloading speeds to maintain clear fire lanes"
   },
   {
     id: "zone-10",
-    name: "Lakefront & Drainage Channel",
-    code: "Z-DRN",
-    centerCoordinates: [23.8148, 90.4272],
+    name: "United City Retention Lake & Sump",
+    code: "UIU-Z10",
+    centerCoordinates: [23.7963, 90.4512],
     polygonBounds: [
-      [23.8156, 90.4265],
-      [23.8158, 90.4280],
-      [23.8140, 90.4281],
-      [23.8138, 90.4266]
+      [23.7968, 90.4507],
+      [23.7969, 90.4520],
+      [23.7958, 90.4521],
+      [23.7957, 90.4508]
     ],
     cameraCount: 1,
     activeIncidentCount: 0,
     riskLevel: "LOW",
-    description: "Rainwater retention pond and bio-filtration runoff channel",
+    description: "Rainwater overflow catchment basin and bio-filtration runoff channel",
     recommendedAction: "Bi-weekly debris netting and algae inspection"
   }
 ];
 
-// 16 CCTV Cameras (GV-CAM-001 to GV-CAM-016)
+// 16 CCTV Cameras installed around United International University (UIU)
 export const CAMERAS: CameraRecord[] = [
   {
     id: "GV-CAM-001",
-    name: "Main Gate West Entry",
+    name: "UIU Main Gate North Entry",
     locationId: "zone-1",
-    locationName: "Main Campus Gate",
-    coordinates: [23.8156, 90.4222],
+    locationName: "UIU Main Gate (Madani Ave)",
+    coordinates: [23.7985, 90.4491],
     status: "ONLINE",
     coverageCategory: "TRAFFIC_CONGESTION",
     lastEventTime: "10 mins ago",
@@ -207,10 +208,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-002",
-    name: "Main Gate Pedestrian Lane",
+    name: "UIU Main Gate Pedestrian Concourse",
     locationId: "zone-1",
-    locationName: "Main Campus Gate",
-    coordinates: [23.8152, 90.4227],
+    locationName: "UIU Main Gate (Madani Ave)",
+    coordinates: [23.7982, 90.4494],
     status: "ONLINE",
     coverageCategory: "WASTE_ACCUMULATION",
     lastEventTime: "45 mins ago",
@@ -219,10 +220,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-003",
-    name: "Gate 2 Boundary Wall",
+    name: "Gate 2 Madani Ave Perimeter Wall",
     locationId: "zone-2",
-    locationName: "Gate 2 & Perimeter",
-    coordinates: [23.8170, 90.4244],
+    locationName: "Gate 2 & North Perimeter",
+    coordinates: [23.7986, 90.4503],
     status: "ONLINE",
     coverageCategory: "ILLEGAL_DUMPING",
     lastEventTime: "2 hrs ago",
@@ -233,8 +234,8 @@ export const CAMERAS: CameraRecord[] = [
     id: "GV-CAM-004",
     name: "Gate 2 Waste Collection Point",
     locationId: "zone-2",
-    locationName: "Gate 2 & Perimeter",
-    coordinates: [23.8174, 90.4251],
+    locationName: "Gate 2 & North Perimeter",
+    coordinates: [23.7989, 90.4507],
     status: "ONLINE",
     coverageCategory: "WASTE_ACCUMULATION",
     lastEventTime: "3 mins ago",
@@ -244,10 +245,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-005",
-    name: "Cafeteria Terrace Bins",
+    name: "UIU Cafeteria Terrace Bins",
     locationId: "zone-5",
-    locationName: "Central Cafeteria",
-    coordinates: [23.8155, 90.4255],
+    locationName: "UIU Student Cafeteria",
+    coordinates: [23.7976, 90.4504],
     status: "ONLINE",
     coverageCategory: "BIN_OVERFLOW",
     lastEventTime: "18 mins ago",
@@ -257,10 +258,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-006",
-    name: "Cafeteria Rear Waste Shute",
+    name: "UIU Cafeteria Food Court Service Shute",
     locationId: "zone-5",
-    locationName: "Central Cafeteria",
-    coordinates: [23.8150, 90.4262],
+    locationName: "UIU Student Cafeteria",
+    coordinates: [23.7973, 90.4508],
     status: "ONLINE",
     coverageCategory: "BIN_OVERFLOW",
     lastEventTime: "1 hr ago",
@@ -269,10 +270,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-007",
-    name: "Academic Block A Front Court",
+    name: "UIU Academic Complex Front Courtyard",
     locationId: "zone-3",
-    locationName: "Academic Block A",
-    coordinates: [23.8160, 90.4240],
+    locationName: "UIU Academic Complex (Eng)",
+    coordinates: [23.7980, 90.4494],
     status: "ONLINE",
     coverageCategory: "WASTE_ACCUMULATION",
     lastEventTime: "3 hrs ago",
@@ -281,10 +282,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-008",
-    name: "Academic Block A North Corridor",
+    name: "Academic Block Engineering Concourse",
     locationId: "zone-3",
-    locationName: "Academic Block A",
-    coordinates: [23.8156, 90.4246],
+    locationName: "UIU Academic Complex (Eng)",
+    coordinates: [23.7977, 90.4496],
     status: "ONLINE",
     coverageCategory: "SMOKE_EVENT",
     lastEventTime: "5 hrs ago",
@@ -293,10 +294,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-009",
-    name: "Parking South Drainage Sump",
+    name: "South Parking Drainage Sump",
     locationId: "zone-7",
     locationName: "Parking South & Bus Bay",
-    coordinates: [23.8138, 90.4248],
+    coordinates: [23.7968, 90.4493],
     status: "ONLINE",
     coverageCategory: "WATERLOGGING",
     lastEventTime: "4 hrs ago",
@@ -305,10 +306,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-010",
-    name: "Parking South Bus Bay Turn",
+    name: "Student Bus Loop Turn",
     locationId: "zone-7",
     locationName: "Parking South & Bus Bay",
-    coordinates: [23.8134, 90.4254],
+    coordinates: [23.7966, 90.4496],
     status: "ONLINE",
     coverageCategory: "TRAFFIC_CONGESTION",
     lastEventTime: "1 hr ago",
@@ -317,10 +318,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-011",
-    name: "Academic Block B Plaza",
+    name: "UIU Plaza & Central Fountain",
     locationId: "zone-4",
-    locationName: "Academic Block B",
-    coordinates: [23.8148, 90.4241],
+    locationName: "UIU Academic Complex (Business)",
+    coordinates: [23.7976, 90.4499],
     status: "ONLINE",
     coverageCategory: "WASTE_ACCUMULATION",
     lastEventTime: "30 mins ago",
@@ -329,10 +330,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-012",
-    name: "Academic Block B East Lawn",
+    name: "UIU Library East Walkway",
     locationId: "zone-4",
-    locationName: "Academic Block B",
-    coordinates: [23.8144, 90.4248],
+    locationName: "UIU Academic Complex (Business)",
+    coordinates: [23.7973, 90.4501],
     status: "ONLINE",
     coverageCategory: "ILLEGAL_DUMPING",
     lastEventTime: "6 hrs ago",
@@ -341,10 +342,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-013",
-    name: "Parking North Ramp",
+    name: "UIU Sports Field Spectator Stand",
     locationId: "zone-6",
-    locationName: "Parking North",
-    coordinates: [23.8168, 90.4265],
+    locationName: "UIU Sports Arena",
+    coordinates: [23.7984, 90.4514],
     status: "ONLINE",
     coverageCategory: "TRAFFIC_CONGESTION",
     lastEventTime: "2 hrs ago",
@@ -353,10 +354,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-014",
-    name: "Waste Collection Sorter Dock",
+    name: "Central Waste Hub Sorter Platform",
     locationId: "zone-8",
-    locationName: "Central Waste Collection Hub",
-    coordinates: [23.8169, 90.4223],
+    locationName: "Central Waste Depot",
+    coordinates: [23.7965, 90.4503],
     status: "ONLINE",
     coverageCategory: "WASTE_ACCUMULATION",
     lastEventTime: "15 mins ago",
@@ -365,10 +366,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-015",
-    name: "Service Road West Depot",
+    name: "Service Road Logistics Gate",
     locationId: "zone-9",
-    locationName: "Service & Delivery Road",
-    coordinates: [23.8142, 90.4224],
+    locationName: "Logistics & Service Road",
+    coordinates: [23.7970, 90.4487],
     status: "ONLINE",
     coverageCategory: "ILLEGAL_DUMPING",
     lastEventTime: "7 hrs ago",
@@ -377,10 +378,10 @@ export const CAMERAS: CameraRecord[] = [
   },
   {
     id: "GV-CAM-016",
-    name: "Lake Retention Weir",
+    name: "Retention Lake Overflow Weir",
     locationId: "zone-10",
-    locationName: "Lakefront & Drainage Channel",
-    coordinates: [23.8148, 90.4272],
+    locationName: "Retention Lake & Sump",
+    coordinates: [23.7962, 90.4513],
     status: "ONLINE",
     coverageCategory: "WATERLOGGING",
     lastEventTime: "12 hrs ago",
@@ -390,6 +391,7 @@ export const CAMERAS: CameraRecord[] = [
 ];
 
 // Personnel Roster (Bangladeshi context)
+// Rahim Uddin is assigned the user's phone number 01307726701!
 export const USERS: UserProfile[] = [
   {
     id: "usr-admin-1",
@@ -399,7 +401,7 @@ export const USERS: UserProfile[] = [
     department: "CLEANING",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1711-098234",
-    email: "tariqul.islam@campus.edu.bd"
+    email: "tariqul.islam@uiu.ac.bd"
   },
   {
     id: "usr-op-1",
@@ -409,7 +411,7 @@ export const USERS: UserProfile[] = [
     department: "SECURITY",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1819-456712",
-    email: "tanvir.ctrl@campus.edu.bd"
+    email: "tanvir.ctrl@uiu.ac.bd"
   },
   {
     id: "usr-op-2",
@@ -419,7 +421,7 @@ export const USERS: UserProfile[] = [
     department: "SECURITY",
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1912-789012",
-    email: "nusrat.ctrl@campus.edu.bd"
+    email: "nusrat.ctrl@uiu.ac.bd"
   },
   {
     id: "usr-sup-1",
@@ -430,7 +432,7 @@ export const USERS: UserProfile[] = [
     team: "Cleaning Team B",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1715-890123",
-    email: "kamal.sup@campus.edu.bd"
+    email: "kamal.sup@uiu.ac.bd"
   },
   {
     id: "usr-sup-2",
@@ -441,7 +443,7 @@ export const USERS: UserProfile[] = [
     team: "Civil Works Unit",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1678-234567",
-    email: "shahriar.maint@campus.edu.bd"
+    email: "shahriar.maint@uiu.ac.bd"
   },
   {
     id: "usr-resp-1",
@@ -451,8 +453,8 @@ export const USERS: UserProfile[] = [
     department: "CLEANING",
     team: "Cleaning Team B",
     avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80",
-    phone: "+880 1823-112233",
-    email: "rahim.field@campus.edu.bd",
+    phone: "+880 1307-726701", // The user's active mobile number!
+    email: "rahim.field@uiu.ac.bd",
     status: "AVAILABLE",
     completedTasksToday: 4,
     avgResponseTimeMin: 6.4
@@ -466,7 +468,7 @@ export const USERS: UserProfile[] = [
     team: "Cleaning Team A",
     avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1734-556677",
-    email: "faruk.field@campus.edu.bd",
+    email: "faruk.field@uiu.ac.bd",
     status: "AVAILABLE",
     completedTasksToday: 3,
     avgResponseTimeMin: 7.1
@@ -480,7 +482,7 @@ export const USERS: UserProfile[] = [
     team: "Civil Works Unit",
     avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1918-998877",
-    email: "alim.maint@campus.edu.bd",
+    email: "alim.maint@uiu.ac.bd",
     status: "AVAILABLE",
     completedTasksToday: 2,
     avgResponseTimeMin: 12.0
@@ -494,7 +496,7 @@ export const USERS: UserProfile[] = [
     team: "Cleaning Team A",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1729-334455",
-    email: "sultana.field@campus.edu.bd",
+    email: "sultana.field@uiu.ac.bd",
     status: "AVAILABLE",
     completedTasksToday: 5,
     avgResponseTimeMin: 5.8
@@ -507,29 +509,28 @@ export const USERS: UserProfile[] = [
     department: "SAFETY",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80",
     phone: "+880 1712-990011",
-    email: "farhana.sustainability@campus.edu.bd"
+    email: "farhana.sustainability@uiu.ac.bd"
   }
 ];
 
-// Helper to generate ISO timestamps relative to now
 const now = new Date();
 const hoursAgo = (h: number) => new Date(now.getTime() - h * 3600000).toISOString();
 const daysAgo = (d: number, hourOffset: number = 0) => new Date(now.getTime() - (d * 24 + hourOffset) * 3600000).toISOString();
 
-// Pre-seeded Realistic Incidents (70+ incidents for robust analytics)
+// Pre-seeded Realistic Incidents at UIU Campus
 export const INITIAL_INCIDENTS: IncidentRecord[] = [
   // Live Active Incident 1: The Gate 2 Showcase Incident
   {
     id: "GV-1042",
-    title: "Heavy Waste Accumulation near Gate 2 Vendors",
+    title: "Heavy Waste Accumulation near UIU Gate 2 Vendors",
     category: "WASTE_ACCUMULATION",
     categoryLabel: "Waste Accumulation",
-    description: "AI vision detected large black plastic garbage bags and discarded food containers near Gate 2 perimeter boundary.",
+    description: "AI vision detected large black plastic garbage bags and discarded food containers near UIU Gate 2 perimeter boundary along Madani Avenue.",
     cameraId: "GV-CAM-004",
     cameraName: "Gate 2 Waste Collection Point",
     locationId: "zone-2",
-    locationName: "Gate 2 & Perimeter",
-    coordinates: [23.8174, 90.4251],
+    locationName: "Gate 2 & North Perimeter (UIU)",
+    coordinates: [23.7989, 90.4507],
     priority: "HIGH",
     status: "PENDING_VERIFICATION",
     aiConfidence: 0.94,
@@ -543,15 +544,15 @@ export const INITIAL_INCIDENTS: IncidentRecord[] = [
   // Live Active Incident 2: Cafeteria Overflow
   {
     id: "GV-1039",
-    title: "Post-Lunch Bin Overflowing at Terrace Area",
+    title: "Post-Lunch Bin Overflowing at UIU Cafeteria Terrace",
     category: "BIN_OVERFLOW",
     categoryLabel: "Bin Overflow",
     description: "Optical sensor triggers 100% capacity alarm with cups and beverage cartons spilling onto pavers.",
     cameraId: "GV-CAM-005",
-    cameraName: "Cafeteria Terrace Bins",
+    cameraName: "UIU Cafeteria Terrace Bins",
     locationId: "zone-5",
-    locationName: "Central Cafeteria",
-    coordinates: [23.8155, 90.4255],
+    locationName: "UIU Student Cafeteria",
+    coordinates: [23.7976, 90.4504],
     priority: "MEDIUM",
     status: "ASSIGNED",
     aiConfidence: 0.89,
@@ -570,15 +571,15 @@ export const INITIAL_INCIDENTS: IncidentRecord[] = [
   // Incident 3: Parking South Waterlogging (In Progress)
   {
     id: "GV-1035",
-    title: "Rainwater Ponding across South Bus Ramp",
+    title: "Rainwater Ponding across UIU South Bus Ramp",
     category: "WATERLOGGING",
     categoryLabel: "Waterlogging",
     description: "Catch-basin blocked by leaf debris resulting in 15cm standing pool.",
     cameraId: "GV-CAM-009",
-    cameraName: "Parking South Drainage Sump",
+    cameraName: "South Parking Drainage Sump",
     locationId: "zone-7",
-    locationName: "Parking South & Bus Bay",
-    coordinates: [23.8138, 90.4248],
+    locationName: "Parking South & Bus Bay (UIU)",
+    coordinates: [23.7968, 90.4493],
     priority: "CRITICAL",
     status: "IN_PROGRESS",
     aiConfidence: 0.96,
@@ -605,10 +606,10 @@ export const INITIAL_INCIDENTS: IncidentRecord[] = [
     categoryLabel: "Waste Accumulation",
     description: "Lab delivery crates discarded outside robotics laboratory.",
     cameraId: "GV-CAM-007",
-    cameraName: "Academic Block A Front Court",
+    cameraName: "UIU Academic Front Courtyard",
     locationId: "zone-3",
-    locationName: "Academic Block A",
-    coordinates: [23.8160, 90.4240],
+    locationName: "UIU Academic Complex (Eng)",
+    coordinates: [23.7980, 90.4494],
     priority: "LOW",
     status: "CLOSED",
     aiConfidence: 0.91,
@@ -618,99 +619,68 @@ export const INITIAL_INCIDENTS: IncidentRecord[] = [
     acceptedAt: hoursAgo(3.5),
     workStartedAt: hoursAgo(3.4),
     resolvedAt: hoursAgo(3.0),
-    closedAt: hoursAgo(2.8),
+    closedAt: hoursAgo(2.9),
     slaMinutes: 60,
-    slaDeadline: hoursAgo(2.8),
+    slaDeadline: hoursAgo(3),
     assignedDepartment: "CLEANING",
-    assignedSupervisorId: "usr-sup-1",
-    assignedSupervisorName: "Kamal Hossain",
     assignedResponderId: "usr-resp-1",
     assignedResponderName: "Rahim Uddin",
     beforeEvidenceUrl: EVIDENCE_IMAGES.wasteBefore,
     afterEvidenceUrl: EVIDENCE_IMAGES.wasteAfter,
-    operatorNotes: "Verified via Camera 7.",
-    responderNotes: "Boxes flattened and moved to Recycling Bay.",
-    supervisorNotes: "Prompt response under 30 minutes. Approved."
+    responderNotes: "Boxes flattened and transferred to recycling hub.",
+    supervisorNotes: "Verified via CCTV 7. Good quick response."
   },
-  // Incident 5: False Detection
-  {
-    id: "GV-1028",
-    title: "Shadow Artifact Flagged as Spill",
-    category: "WASTE_ACCUMULATION",
-    categoryLabel: "Waste Accumulation",
-    description: "Tree canopy shadow in twilight incorrectly triggered optical density threshold.",
-    cameraId: "GV-CAM-012",
-    cameraName: "Academic Block B East Lawn",
-    locationId: "zone-4",
-    locationName: "Academic Block B",
-    coordinates: [23.8144, 90.4248],
-    priority: "LOW",
-    status: "FALSE_DETECTION",
-    aiConfidence: 0.68,
-    detectedAt: hoursAgo(8),
-    verifiedAt: hoursAgo(7.9),
-    slaMinutes: 30,
-    slaDeadline: hoursAgo(7.5),
-    assignedDepartment: "CLEANING",
-    beforeEvidenceUrl: EVIDENCE_IMAGES.wasteBefore,
-    operatorNotes: "Confirmed sun angle shadow. Closed as False Alarm."
-  }
+  // Pre-seeded historical incidents (70+ records for Recharts analytics)
+  ...Array.from({ length: 72 }).map((_, idx) => {
+    const idNum = 1030 - idx;
+    const daysPrior = Math.floor(idx / 10);
+    const hourPrior = (idx % 10) * 2;
+    const catList = ['WASTE_ACCUMULATION', 'BIN_OVERFLOW', 'ILLEGAL_DUMPING', 'WATERLOGGING', 'TRAFFIC_CONGESTION'];
+    const catLabels = ['Waste Accumulation', 'Bin Overflow', 'Illegal Dumping', 'Waterlogging', 'Traffic Congestion'];
+    const catIndex = idx % 5;
+    const zonesList = [
+      { id: 'zone-2', name: 'Gate 2 & North Perimeter (UIU)', cam: 'GV-CAM-004', coords: [23.7989, 90.4507] },
+      { id: 'zone-5', name: 'UIU Student Cafeteria', cam: 'GV-CAM-005', coords: [23.7976, 90.4504] },
+      { id: 'zone-7', name: 'Parking South & Bus Bay (UIU)', cam: 'GV-CAM-009', coords: [23.7968, 90.4493] },
+      { id: 'zone-1', name: 'UIU Main Gate (Madani Ave)', cam: 'GV-CAM-001', coords: [23.7985, 90.4491] },
+      { id: 'zone-3', name: 'UIU Academic Complex (Eng)', cam: 'GV-CAM-007', coords: [23.7980, 90.4494] }
+    ];
+    // Heavily weight Gate 2 for realistic hotspot analysis
+    const chosenZone = idx % 3 === 0 ? zonesList[0] : zonesList[idx % zonesList.length];
+
+    return {
+      id: `GV-${idNum}`,
+      title: `${catLabels[catIndex]} Incident at ${chosenZone.name}`,
+      category: catList[catIndex] as any,
+      categoryLabel: catLabels[catIndex],
+      description: `Historical closed-loop incident logged by CCTV AI optical detection.`,
+      cameraId: chosenZone.cam,
+      cameraName: `${chosenZone.name} Optical Sensor`,
+      locationId: chosenZone.id,
+      locationName: chosenZone.name,
+      coordinates: [chosenZone.coords[0], chosenZone.coords[1]] as [number, number],
+      priority: (idx % 7 === 0 ? 'CRITICAL' : idx % 3 === 0 ? 'HIGH' : 'MEDIUM') as any,
+      status: 'CLOSED' as const,
+      aiConfidence: 0.85 + (idx % 12) * 0.01,
+      detectedAt: daysAgo(daysPrior, hourPrior),
+      verifiedAt: daysAgo(daysPrior, hourPrior - 0.1),
+      assignedAt: daysAgo(daysPrior, hourPrior - 0.2),
+      acceptedAt: daysAgo(daysPrior, hourPrior - 0.3),
+      workStartedAt: daysAgo(daysPrior, hourPrior - 0.4),
+      resolvedAt: daysAgo(daysPrior, hourPrior - 0.7),
+      closedAt: daysAgo(daysPrior, hourPrior - 0.8),
+      slaMinutes: 45,
+      slaDeadline: daysAgo(daysPrior, hourPrior - 0.7),
+      assignedDepartment: (catList[catIndex] === 'WATERLOGGING' ? 'MAINTENANCE' : 'CLEANING') as any,
+      assignedResponderId: 'usr-resp-1',
+      assignedResponderName: 'Rahim Uddin',
+      beforeEvidenceUrl: EVIDENCE_IMAGES.wasteBefore,
+      afterEvidenceUrl: EVIDENCE_IMAGES.wasteAfter,
+      supervisorNotes: "Resolution verified against live CCTV feed. Approved."
+    };
+  })
 ];
 
-// Helper to seed 65 additional historical incidents for Recharts graphs
-const CATEGORIES: { cat: any; label: string; dept: any; p: any }[] = [
-  { cat: "WASTE_ACCUMULATION", label: "Waste Accumulation", dept: "CLEANING", p: "HIGH" },
-  { cat: "BIN_OVERFLOW", label: "Bin Overflow", dept: "CLEANING", p: "MEDIUM" },
-  { cat: "ILLEGAL_DUMPING", label: "Illegal Dumping", dept: "CLEANING", p: "CRITICAL" },
-  { cat: "WATERLOGGING", label: "Waterlogging", dept: "MAINTENANCE", p: "HIGH" },
-  { cat: "TRAFFIC_CONGESTION", label: "Traffic Congestion", dept: "SECURITY", p: "MEDIUM" },
-  { cat: "SMOKE_EVENT", label: "Smoke Event", dept: "SAFETY", p: "CRITICAL" }
-];
-
-for (let i = 1; i <= 65; i++) {
-  const dayOffset = Math.floor(i / 2.5); // Spread over past 25 days
-  const catItem = CATEGORIES[i % CATEGORIES.length];
-  const zoneIndex = (i * 3) % CAMPUS_ZONES.length;
-  const zone = CAMPUS_ZONES[zoneIndex];
-  const cam = CAMERAS[i % CAMERAS.length];
-  const hour = 14 + (i % 8); // Spread mostly in 2 PM – 9 PM (peak 4 PM - 7 PM)
-  
-  const detected = daysAgo(dayOffset, -(hour - 12));
-  const closed = daysAgo(dayOffset, -(hour - 11));
-
-  INITIAL_INCIDENTS.push({
-    id: `GV-${1000 - i}`,
-    title: `${catItem.label} in ${zone.name}`,
-    category: catItem.cat,
-    categoryLabel: catItem.label,
-    description: `Historical operational incident managed by GreenVision operational closed-loop.`,
-    cameraId: cam.id,
-    cameraName: cam.name,
-    locationId: zone.id,
-    locationName: zone.name,
-    coordinates: zone.centerCoordinates,
-    priority: catItem.p,
-    status: "CLOSED",
-    aiConfidence: 0.85 + (i % 15) * 0.01,
-    detectedAt: detected,
-    verifiedAt: detected,
-    assignedAt: detected,
-    acceptedAt: detected,
-    workStartedAt: detected,
-    resolvedAt: closed,
-    closedAt: closed,
-    slaMinutes: 45,
-    slaDeadline: closed,
-    assignedDepartment: catItem.dept,
-    assignedSupervisorName: "Kamal Hossain",
-    assignedResponderName: i % 2 === 0 ? "Rahim Uddin" : "Faruk Mia",
-    beforeEvidenceUrl: EVIDENCE_IMAGES.wasteBefore,
-    afterEvidenceUrl: EVIDENCE_IMAGES.wasteAfter,
-    supervisorNotes: "Resolution verified against CCTV live feed."
-  });
-}
-
-// Initial Activity Events (Section 22)
 export const INITIAL_ACTIVITY_LOG: ActivityEvent[] = [
   {
     id: "act-1",
@@ -718,54 +688,53 @@ export const INITIAL_ACTIVITY_LOG: ActivityEvent[] = [
     timeFormatted: "18:41",
     incidentId: "GV-1042",
     type: "AI_DETECTION",
-    actor: "AI Engine (GV-CAM-004)",
-    actorRole: "Computer Vision Model",
-    description: "AI detected waste accumulation at Gate 2 (Confidence: 94%)",
+    actor: "AI Vision (GV-CAM-004)",
+    actorRole: "Optical Inference",
+    description: "AI detected waste accumulation near UIU Gate 2 perimeter (Confidence: 94%)",
     severity: "warning"
   },
   {
     id: "act-2",
-    timestamp: hoursAgo(0.4),
-    timeFormatted: "18:25",
+    timestamp: hoursAgo(0.5),
+    timeFormatted: "18:15",
     incidentId: "GV-1039",
     type: "ASSIGNMENT",
     actor: "Kamal Hossain",
-    actorRole: "Cleaning Supervisor",
-    description: "Assigned Sultana Begum to Cafeteria Terrace Bin Overflow",
+    actorRole: "Supervisor",
+    description: "Dispatched Sultana Begum to UIU Cafeteria Terrace Bin Overflow",
     severity: "info"
   },
   {
     id: "act-3",
     timestamp: hoursAgo(0.8),
-    timeFormatted: "17:50",
+    timeFormatted: "17:55",
     incidentId: "GV-1035",
     type: "WORK_STARTED",
     actor: "Abdul Alim",
     actorRole: "Field Responder",
-    description: "Started pump clearing on Parking South waterlogging",
+    description: "Abdul Alim arrived at UIU South Parking Ramp; submersible pump activated",
     severity: "info"
   },
   {
     id: "act-4",
-    timestamp: hoursAgo(2.8),
-    timeFormatted: "15:52",
+    timestamp: hoursAgo(2.9),
+    timeFormatted: "15:48",
     incidentId: "GV-1031",
     type: "INCIDENT_CLOSED",
     actor: "Kamal Hossain",
     actorRole: "Supervisor",
-    description: "Approved resolution for Academic Block A (GV-1031 closed)",
+    description: "Approved resolution for GV-1031. Closed loop complete; Green Score incremented.",
     severity: "success"
   }
 ];
 
-// Initial In-App Notifications (Section 39)
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif-1",
     timestamp: hoursAgo(0.1),
     timeFormatted: "18:41",
-    title: "New AI Detection Pending Verification",
-    message: "High priority waste accumulation flagged at Gate 2 (GV-CAM-004)",
+    title: "AI Detection Alert: GV-1042",
+    message: "Optical inference triggered at UIU Gate 2. Triage verification required.",
     type: "NEW_INCIDENT",
     incidentId: "GV-1042",
     read: false,
@@ -773,24 +742,13 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: "notif-2",
-    timestamp: hoursAgo(0.5),
-    timeFormatted: "18:12",
-    title: "Task Assigned",
-    message: "Cafeteria Terrace Bin overflow assigned to Cleaning Team A",
-    type: "TASK_ASSIGNED",
-    incidentId: "GV-1039",
-    read: true,
-    priority: "MEDIUM"
-  },
-  {
-    id: "notif-3",
-    timestamp: hoursAgo(2.8),
-    timeFormatted: "15:53",
-    title: "Incident Verified & Closed",
-    message: "GV-1031 verified and closed by Supervisor Kamal Hossain",
-    type: "TASK_RESOLVED",
-    incidentId: "GV-1031",
-    read: true,
-    priority: "LOW"
+    timestamp: hoursAgo(0.8),
+    timeFormatted: "17:55",
+    title: "SLA Warning: GV-1035",
+    message: "UIU South Parking waterlogging task approaching 45-minute mark.",
+    type: "OVERDUE",
+    incidentId: "GV-1035",
+    read: false,
+    priority: "CRITICAL"
   }
 ];

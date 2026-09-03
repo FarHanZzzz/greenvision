@@ -36,6 +36,17 @@ interface GreenVisionState {
   selectedCameraId: string | null;
   setSelectedCameraId: (id: string | null) => void;
 
+  // Contact / SMS Modal State
+  isContactModalOpen: boolean;
+  contactRecipientNumber: string;
+  openContactModal: (recipientNumber?: string) => void;
+  closeContactModal: () => void;
+
+  // System Guide Modal State
+  isGuideModalOpen: boolean;
+  openGuideModal: () => void;
+  closeGuideModal: () => void;
+
   // Domain Entities
   incidents: IncidentRecord[];
   cameras: CameraRecord[];
@@ -44,7 +55,7 @@ interface GreenVisionState {
   activityLog: ActivityEvent[];
   notifications: NotificationItem[];
 
-  // Dynamic Responder Live Coordinates for Map Animation
+  // Dynamic Responder Live Coordinates for Map Animation (UIU Campus)
   responderCoordinates: Record<string, [number, number]>;
 
   // Simulation Controls
@@ -93,6 +104,20 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
   selectedCameraId: "GV-CAM-004",
   setSelectedCameraId: (id) => set({ selectedCameraId: id }),
 
+  // Contact / SMS Modal State (User's phone 01307726701 by default)
+  isContactModalOpen: false,
+  contactRecipientNumber: "01307726701",
+  openContactModal: (recipientNumber) => set({ 
+    isContactModalOpen: true, 
+    contactRecipientNumber: recipientNumber || "01307726701" 
+  }),
+  closeContactModal: () => set({ isContactModalOpen: false }),
+
+  // System Guide Modal State
+  isGuideModalOpen: false,
+  openGuideModal: () => set({ isGuideModalOpen: true }),
+  closeGuideModal: () => set({ isGuideModalOpen: false }),
+
   incidents: JSON.parse(JSON.stringify(INITIAL_INCIDENTS)),
   cameras: JSON.parse(JSON.stringify(CAMERAS)),
   zones: JSON.parse(JSON.stringify(CAMPUS_ZONES)),
@@ -100,12 +125,12 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
   activityLog: JSON.parse(JSON.stringify(INITIAL_ACTIVITY_LOG)),
   notifications: JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS)),
 
-  // Default positions: Rahim starts at Central Depot [23.8142, 90.4224]
+  // Default positions: UIU Campus (Madani Avenue, Dhaka)
   responderCoordinates: {
-    "usr-resp-1": [23.8145, 90.4230],
-    "usr-resp-2": [23.8160, 90.4240],
-    "usr-resp-3": [23.8138, 90.4248],
-    "usr-resp-4": [23.8155, 90.4255],
+    "usr-resp-1": [23.7965, 90.4503], // Rahim starts at UIU Central Depot
+    "usr-resp-2": [23.7980, 90.4494], // Faruk at Academic Complex
+    "usr-resp-3": [23.7968, 90.4493], // Alim at South Parking Drainage
+    "usr-resp-4": [23.7976, 90.4504], // Sultana at Cafeteria Terrace
   },
 
   // Simulation
@@ -129,10 +154,10 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
       isSimulating: false,
       simStep: 0,
       responderCoordinates: {
-        "usr-resp-1": [23.8145, 90.4230],
-        "usr-resp-2": [23.8160, 90.4240],
-        "usr-resp-3": [23.8138, 90.4248],
-        "usr-resp-4": [23.8155, 90.4255],
+        "usr-resp-1": [23.7965, 90.4503],
+        "usr-resp-2": [23.7980, 90.4494],
+        "usr-resp-3": [23.7968, 90.4493],
+        "usr-resp-4": [23.7976, 90.4504],
       }
     });
   },
@@ -263,7 +288,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
         timestamp: nowIso,
         timeFormatted,
         title: `Task Dispatched: ${id}`,
-        message: `${responder?.name} notified for ${target?.locationName}`,
+        message: `${responder?.name} (${responder?.phone}) notified for ${target?.locationName}`,
         type: 'TASK_ASSIGNED',
         incidentId: id,
         read: false,
@@ -365,7 +390,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     });
   },
 
-  // 3. Responder Accepts Task (Coordinates begin transit)
+  // 3. Responder Accepts Task (Coordinates begin transit along UIU campus road)
   acceptTask: (id) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -376,10 +401,10 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
 
       return {
         incidents: state.incidents.map(inc => inc.id === id ? { ...inc, status: 'ACCEPTED' as IncidentStatus, acceptedAt: nowIso } : inc),
-        // Move responder halfway towards target location
+        // Move responder halfway towards UIU Gate 2
         responderCoordinates: {
           ...state.responderCoordinates,
-          [responderId]: [23.8166, 90.4244] // En route midpoint
+          [responderId]: [23.7977, 90.4505] // UIU En route midpoint
         },
         activityLog: [
           {
@@ -390,7 +415,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
             type: 'TASK_ACCEPTED',
             actor: target?.assignedResponderName || 'Rahim Uddin',
             actorRole: 'Field Responder',
-            description: `${target?.assignedResponderName || 'Responder'} accepted task ${id} — traveling to site`,
+            description: `${target?.assignedResponderName || 'Responder'} accepted task ${id} — traveling to UIU Gate 2`,
             severity: 'info'
           },
           ...state.activityLog
@@ -399,7 +424,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     });
   },
 
-  // 4. Responder Arrives & Starts Work (Coordinates reach incident site)
+  // 4. Responder Arrives & Starts Work (Coordinates reach UIU incident site)
   startWork: (id) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -410,10 +435,10 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
 
       return {
         incidents: state.incidents.map(inc => inc.id === id ? { ...inc, status: 'IN_PROGRESS' as IncidentStatus, workStartedAt: nowIso } : inc),
-        // Responder arrives at exact incident coordinates
+        // Responder arrives at exact UIU Gate 2 coordinates
         responderCoordinates: {
           ...state.responderCoordinates,
-          [responderId]: target?.coordinates || [23.8174, 90.4251]
+          [responderId]: target?.coordinates || [23.7989, 90.4507]
         },
         activityLog: [
           {
@@ -576,15 +601,15 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
 
     const newInc: IncidentRecord = {
       id: newId,
-      title: "Waste Pile Detected near Main Cafeteria Lawn",
+      title: "Waste Pile Flagged near UIU Cafeteria Terrace",
       category: "WASTE_ACCUMULATION",
       categoryLabel: "Waste Accumulation",
-      description: "AI vision triggered optical detection for discarded food bags and cups.",
-      cameraId: "GV-CAM-006",
-      cameraName: "Cafeteria Rear Waste Shute",
+      description: "Optical inference detected discarded beverage containers and plastic bags at UIU Central Cafeteria terrace.",
+      cameraId: "GV-CAM-005",
+      cameraName: "UIU Cafeteria Terrace Bins",
       locationId: "zone-5",
-      locationName: "Central Cafeteria",
-      coordinates: [23.8150, 90.4262],
+      locationName: "UIU Student Cafeteria",
+      coordinates: [23.7975, 90.4506],
       priority: "HIGH",
       status: "PENDING_VERIFICATION",
       aiConfidence: 0.93,
@@ -605,9 +630,9 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
           timeFormatted,
           incidentId: newId,
           type: 'AI_DETECTION',
-          actor: 'AI Engine (GV-CAM-006)',
+          actor: 'AI Engine (GV-CAM-005)',
           actorRole: 'Computer Vision Model',
-          description: `AI detected waste accumulation at Central Cafeteria (Confidence: 93%)`,
+          description: `AI detected waste accumulation at UIU Student Cafeteria (Confidence: 93%)`,
           severity: 'warning'
         },
         ...state.activityLog
@@ -618,7 +643,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
           timestamp: nowIso,
           timeFormatted,
           title: `New Incident Detected: ${newId}`,
-          message: `Cafeteria rear zone flagged by CCTV vision.`,
+          message: `UIU Cafeteria terrace flagged by optical vision sensor.`,
           type: 'NEW_INCIDENT',
           incidentId: newId,
           read: false,
@@ -629,7 +654,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     }));
   },
 
-  // Multi-Scenario Deterministic Simulation Engine (PRD Section 40 & 41)
+  // Multi-Scenario Simulation Engine (UIU Campus)
   nextSimStep: () => {
     const current = get().simStep;
     const scenario = get().activeScenario;
@@ -637,7 +662,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     if (scenario === 'waste_dumping_gate2') {
       const targetId = "GV-1042";
       if (current === 0) {
-        get().confirmIncident(targetId, 'HIGH', 'Verified via Gate 2 optical feed.');
+        get().confirmIncident(targetId, 'HIGH', 'Verified via UIU Gate 2 optical feed.');
         set({ simStep: 1 });
       } else if (current === 1) {
         get().assignIncident(targetId, "usr-resp-1", "usr-sup-1");
@@ -649,10 +674,10 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
         get().startWork(targetId);
         set({ simStep: 4 });
       } else if (current === 4) {
-        get().resolveTask(targetId, EVIDENCE_IMAGES.wasteAfter, "Debris removed and bin area disinfected.");
+        get().resolveTask(targetId, EVIDENCE_IMAGES.wasteAfter, "Debris removed and sidewalk disinfected.");
         set({ simStep: 5 });
       } else if (current === 5) {
-        get().approveResolution(targetId, "CCTV confirmed area is spotless. Excellent response.");
+        get().approveResolution(targetId, "CCTV confirmed UIU Gate 2 perimeter is spotless. Approved.");
         set({ simStep: 6, isSimulating: false });
       }
     } else if (scenario === 'bin_overflow_cafeteria') {
@@ -685,31 +710,22 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     }
   },
 
-  // Dynamic Operational Green Score Engine (Section 35)
+  // Dynamic Operational Green Score Engine
   getGreenScore: () => {
     const incidents = get().incidents;
     const kpis = calculateKPIs(incidents);
 
-    // 1. Resolution Rate (30% weight)
     const resolutionScore = Math.min(100, Math.max(0, kpis.resolutionRatePct));
-
-    // 2. Response Efficiency (20% weight) -> benchmark 10 min target
     const responseEfficiency = Math.max(50, Math.min(100, Math.round(100 - (kpis.avgResponseTimeMin - 5) * 4)));
-
-    // 3. Hotspot & Repeat Reduction (20% weight) -> based on repeat rate
     const recurringScore = Math.max(60, Math.min(100, Math.round(100 - kpis.repeatIncidentRatePct * 1.5)));
 
-    // 4. Waste Management Triage (15% weight)
     const wasteIncidents = incidents.filter(i => 
       i.category === 'WASTE_ACCUMULATION' || i.category === 'BIN_OVERFLOW' || i.category === 'ILLEGAL_DUMPING'
     );
     const wasteClosed = wasteIncidents.filter(i => i.status === 'CLOSED');
     const wasteScore = Math.round((wasteClosed.length / (wasteIncidents.length || 1)) * 100);
-
-    // 5. Area Cleanliness Index (15% weight) -> penalized by active critical incidents
     const cleanlinessScore = Math.max(40, 100 - kpis.criticalCount * 12);
 
-    // Weighted composite
     const overall = Math.round(
       resolutionScore * 0.30 +
       responseEfficiency * 0.20 +
