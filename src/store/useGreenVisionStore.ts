@@ -29,6 +29,8 @@ interface GreenVisionState {
   // Navigation & Personas
   currentInterface: AppInterface;
   setInterface: (ui: AppInterface) => void;
+  commandSubTab: 'OVERVIEW' | 'MAP' | 'INCIDENTS' | 'CCTV' | 'ANALYTICS' | 'GREENSCORE' | 'REPORTS' | 'CAMERAS' | 'TEAMS' | 'ZONES' | 'SETTINGS';
+  setCommandSubTab: (tab: 'OVERVIEW' | 'MAP' | 'INCIDENTS' | 'CCTV' | 'ANALYTICS' | 'GREENSCORE' | 'REPORTS' | 'CAMERAS' | 'TEAMS' | 'ZONES' | 'SETTINGS') => void;
   activeUser: UserProfile;
   setActiveUser: (userId: string) => void;
   selectedIncidentId: string | null;
@@ -75,6 +77,7 @@ interface GreenVisionState {
   assignIncident: (id: string, responderId: string, supervisorId?: string) => void;
   reassignIncident: (id: string, newResponderId: string, reason?: string) => void;
   escalateIncident: (id: string, reason: string) => void;
+  deescalateIncident: (id: string, reason?: string) => void;
   acceptTask: (id: string) => void;
   startWork: (id: string) => void;
   resolveTask: (id: string, afterEvidenceUrl: string, notes?: string) => void;
@@ -92,6 +95,9 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
   currentInterface: 'COMMAND_CENTER',
   setInterface: (ui) => set({ currentInterface: ui }),
   
+  commandSubTab: 'OVERVIEW',
+  setCommandSubTab: (tab) => set({ commandSubTab: tab }),
+
   activeUser: USERS[0], // Default: Dr. Tariqul Islam (Admin)
   setActiveUser: (userId) => {
     const found = get().users.find(u => u.id === userId);
@@ -101,7 +107,8 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
   selectedIncidentId: "GV-1042",
   setSelectedIncidentId: (id) => set({ selectedIncidentId: id }),
 
-  selectedCameraId: "GV-CAM-004",
+  // Null by default so no video opens automatically on site entry (Resolves user request 5)
+  selectedCameraId: null,
   setSelectedCameraId: (id) => set({ selectedCameraId: id }),
 
   // Contact / SMS Modal State (User's phone 01307726701 by default)
@@ -400,6 +407,56 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
             incidentId: id,
             read: false,
             priority: 'CRITICAL'
+          },
+          ...state.notifications
+        ]
+      };
+    });
+  },
+
+  // De-escalate Incident (PRD Section 14, 15, 21 - Resolves user request 7)
+  deescalateIncident: (id, reason) => {
+    const nowIso = new Date().toISOString();
+    const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    set((state) => {
+      const target = state.incidents.find(i => i.id === id);
+      const isPending = target?.status === 'PENDING_VERIFICATION';
+      const newStatus = isPending ? ('FALSE_DETECTION' as IncidentStatus) : (target?.status === 'ESCALATED' ? 'IN_PROGRESS' as IncidentStatus : target?.status || 'CLOSED');
+      const newPriority: IncidentPriority = target?.priority === 'CRITICAL' ? 'MEDIUM' : 'LOW';
+
+      return {
+        incidents: state.incidents.map(inc => inc.id === id ? {
+          ...inc,
+          status: newStatus,
+          priority: newPriority,
+          operatorNotes: `De-escalated by Operator: ${reason || 'Hazard downgraded / Situation stabilized without emergency dispatch.'}`
+        } : inc),
+        activityLog: [
+          {
+            id: `act-${Date.now()}`,
+            timestamp: nowIso,
+            timeFormatted,
+            incidentId: id,
+            type: 'STATUS_CHANGE',
+            actor: state.activeUser.name,
+            actorRole: state.activeUser.roleTitle,
+            description: `De-escalated ${id} to ${newPriority} priority. Note: ${reason || 'Contained without field escalation.'}`,
+            severity: 'info'
+          },
+          ...state.activityLog
+        ],
+        notifications: [
+          {
+            id: `notif-${Date.now()}`,
+            timestamp: nowIso,
+            timeFormatted,
+            title: `De-escalated: ${id}`,
+            message: `Priority reduced to ${newPriority} (${target?.locationName}).`,
+            type: 'TASK_RESOLVED',
+            incidentId: id,
+            read: false,
+            priority: newPriority
           },
           ...state.notifications
         ]

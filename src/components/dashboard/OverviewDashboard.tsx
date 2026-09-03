@@ -13,7 +13,8 @@ import {
   BarChart3,
   Calendar,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Eye
 } from 'lucide-react';
 import { useGreenVisionStore } from '../../store/useGreenVisionStore';
 import { calculateKPIs } from '../../utils/analyticsCalculator';
@@ -23,12 +24,109 @@ export const OverviewDashboard: React.FC = () => {
   const activityLog = useGreenVisionStore((s) => s.activityLog);
   const getGreenScore = useGreenVisionStore((s) => s.getGreenScore);
   const setSelectedIncidentId = useGreenVisionStore((s) => s.setSelectedIncidentId);
+  const setSelectedCameraId = useGreenVisionStore((s) => s.setSelectedCameraId);
+  const approveResolution = useGreenVisionStore((s) => s.approveResolution);
 
   const greenScore = getGreenScore();
   const kpis = calculateKPIs(incidents);
+  const pendingApprovals = incidents.filter(i => i.status === 'PENDING_APPROVAL');
 
   return (
     <div className="space-y-6">
+
+      {/* SUPERVISOR APPROVAL QUEUE (Resolves User Request 9) */}
+      {pendingApprovals.length > 0 && (
+        <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-900 border-2 border-purple-500/80 rounded-2xl p-5 text-white shadow-xl space-y-4 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="w-3 h-3 rounded-full bg-purple-400 animate-ping"></span>
+              <h3 className="font-extrabold text-sm text-purple-200 tracking-wide uppercase font-mono flex items-center gap-2">
+                <span>Supervisor Verification Queue</span>
+                <span className="bg-purple-800/80 px-2 py-0.5 rounded-full text-xs font-mono text-purple-200">
+                  {pendingApprovals.length} ACTION REQUIRED
+                </span>
+              </h3>
+            </div>
+            <span className="text-[11px] text-purple-300">
+              Field Responder completed work & submitted photographic proof
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {pendingApprovals.map((inc) => (
+              <div
+                key={inc.id}
+                className="bg-slate-950/80 rounded-xl border border-purple-800/50 p-4 space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-emerald-400 text-sm">{inc.id}</span>
+                      <span className="font-bold text-slate-100 text-sm">{inc.title}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-300 border border-red-800">
+                        {inc.priority}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-3">
+                      <span>Location: <strong className="text-slate-200">{inc.locationName}</strong></span>
+                      <span>•</span>
+                      <span>Responder: <strong className="text-sky-300">{inc.assignedResponderName} ({inc.assignedDepartment})</strong></span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedCameraId(inc.cameraId)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition border border-slate-700"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Cross-Check CCTV</span>
+                    </button>
+                    <button
+                      onClick={() => approveResolution(inc.id, 'Verified clean on live feed. Closed.')}
+                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Approve Resolution & Close</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Evidence Side-by-Side Comparison */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1">
+                      <span>BEFORE: AI Detection Snapshot</span>
+                      <span className="text-amber-400">{Math.round(inc.aiConfidence * 100)}% Confidence</span>
+                    </div>
+                    <div className="aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 relative">
+                      <img src={inc.beforeEvidenceUrl} alt="Before" className="w-full h-full object-cover" />
+                      <span className="absolute bottom-1.5 left-1.5 bg-black/80 px-2 py-0.5 rounded text-[9px] font-mono text-amber-300">
+                        INITIAL CCTV SNAPSHOT
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1">
+                      <span>AFTER: Field Resolution Evidence (Uploaded by {inc.assignedResponderName?.split(' ')[0]})</span>
+                      <span className="text-emerald-400 font-bold">READY FOR SIGN-OFF</span>
+                    </div>
+                    <div className="aspect-video bg-black rounded-xl overflow-hidden border border-emerald-500/50 relative">
+                      <img src={inc.afterEvidenceUrl || inc.beforeEvidenceUrl} alt="After" className="w-full h-full object-cover" />
+                      <span className="absolute bottom-1.5 left-1.5 bg-emerald-950/90 text-emerald-300 px-2 py-0.5 rounded text-[9px] font-mono font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        FIELD AFTER-PHOTO
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* 1. CURRENT SITUATION (6 Metric KPI Cards - PRD Section 18) */}
       <div>

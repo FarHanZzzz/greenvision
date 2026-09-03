@@ -46,9 +46,8 @@ export function App() {
   const cameras = useGreenVisionStore((s) => s.cameras);
 
   // Sub-navigation within Central Command Center (PRD Section 17)
-  const [commandSubTab, setCommandSubTab] = useState<
-    'OVERVIEW' | 'MAP' | 'INCIDENTS' | 'CCTV' | 'ANALYTICS' | 'GREENSCORE' | 'REPORTS' | 'CAMERAS' | 'TEAMS' | 'ZONES' | 'SETTINGS'
-  >('OVERVIEW');
+  const commandSubTab = useGreenVisionStore((s) => s.commandSubTab);
+  const setCommandSubTab = useGreenVisionStore((s) => s.setCommandSubTab);
 
   const selectedCamera = cameras.find(c => c.id === selectedCameraId);
 

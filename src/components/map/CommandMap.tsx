@@ -34,49 +34,68 @@ import {
 import { useGreenVisionStore } from '../../store/useGreenVisionStore';
 import { IncidentRecord, IncidentStatus } from '../../types';
 
-// Custom Leaflet DivIcons with all 6 PRD Section 20 States
-const createIncidentIcon = (priority: string, status: IncidentStatus) => {
-  let color = '#EF4444'; // Red for Critical
-  let pulseColor = 'rgba(239, 68, 68, 0.4)';
-  let labelText = '';
+// Custom Leaflet DivIcons with Legend-Synchronized Visual Tags (Resolves User Request 1)
+const createIncidentIcon = (priority: string, status: IncidentStatus, id?: string) => {
+  let color = '#DC2626'; // Red
+  let pulseColor = 'rgba(220, 38, 38, 0.6)';
+  let labelText = '!';
+  let badgeText = `🔴 Critical Anomaly ${id ? `(${id})` : ''}`;
+  let badgeStyle = 'background: #450a0a; color: #fca5a5; border: 1px solid #ef4444;';
 
   if (status === 'CLOSED') {
     color = '#10B981'; // Green
     pulseColor = 'rgba(16, 185, 129, 0.3)';
     labelText = '✓';
-  } else if (status === 'PENDING_APPROVAL') {
-    color = '#A855F7'; // Purple - Awaiting Supervisor Verification
+    badgeText = `🟢 Cleaned & Closed ${id ? `(${id})` : ''}`;
+    badgeStyle = 'background: #064e3b; color: #6ee7b7; border: 1px solid #10b981;';
+  } else if (status === 'PENDING_VERIFICATION' || status === 'PENDING_APPROVAL') {
+    color = '#A855F7'; // Purple - Matches "Awaiting Verify" in Legend
     pulseColor = 'rgba(168, 85, 247, 0.5)';
     labelText = '⏳';
-  } else if (status === 'IN_PROGRESS' || status === 'ACCEPTED') {
-    color = '#0284C7'; // Blue - Team Responding & Work underway
+    badgeText = `🟣 Awaiting Verify ${id ? `(${id})` : ''}`;
+    badgeStyle = 'background: #3b0764; color: #d8b4fe; border: 1px solid #a855f7;';
+  } else if (status === 'IN_PROGRESS' || status === 'ACCEPTED' || status === 'ASSIGNED') {
+    color = '#0284C7'; // Blue - Matches "Rahim En Route" in Legend
     pulseColor = 'rgba(2, 132, 199, 0.4)';
     labelText = '⚡';
+    badgeText = `🔵 Rahim En Route ${id ? `(${id})` : ''}`;
+    badgeStyle = 'background: #082f49; color: #7dd3fc; border: 1px solid #0284c7;';
   } else if (priority === 'CRITICAL' || status === 'ESCALATED') {
-    color = '#DC2626'; // Bright Red - Critical Escalation
+    color = '#DC2626'; // Bright Red - Matches "Critical Anomaly" in Legend
     pulseColor = 'rgba(220, 38, 38, 0.6)';
     labelText = '!';
+    badgeText = `🔴 Critical Anomaly ${id ? `(${id})` : ''}`;
+    badgeStyle = 'background: #450a0a; color: #fca5a5; border: 1px solid #ef4444;';
   } else if (priority === 'HIGH') {
     color = '#F97316'; // Orange
     pulseColor = 'rgba(249, 115, 22, 0.4)';
+    badgeText = `🟠 High Priority ${id ? `(${id})` : ''}`;
+    badgeStyle = 'background: #431407; color: #fdba74; border: 1px solid #f97316;';
   } else {
     color = '#F59E0B'; // Amber
     pulseColor = 'rgba(245, 158, 11, 0.4)';
+    badgeText = `🟡 Alert ${id ? `(${id})` : ''}`;
+    badgeStyle = 'background: #451a03; color: #fcd34d; border: 1px solid #f59e0b;';
   }
 
   return L.divIcon({
     className: 'custom-leaflet-marker',
     html: `
-      <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; width: 36px; height: 36px; border-radius: 50%; background: ${pulseColor}; animation: pulse-ring 1.8s infinite;"></div>
-        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${color}; border: 2.5px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">
-          ${labelText}
+      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto; cursor: pointer; user-select: none;">
+        <div style="font-family: ui-monospace, monospace; font-size: 9px; font-weight: 800; padding: 1.5px 6px; border-radius: 9999px; margin-bottom: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.6); white-space: nowrap; ${badgeStyle}">
+          ${badgeText}
+        </div>
+        <div style="position: relative; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; background: ${pulseColor}; animation: pulse-ring 1.8s infinite;"></div>
+          <div style="width: 22px; height: 22px; border-radius: 50%; background: ${color}; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 900;">
+            ${labelText}
+          </div>
         </div>
       </div>
     `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -18],
+    iconSize: [120, 52],
+    iconAnchor: [60, 44],
+    popupAnchor: [0, -44],
   });
 };
 
@@ -97,15 +116,21 @@ const cameraIcon = L.divIcon({
 const responderIcon = L.divIcon({
   className: 'custom-responder-marker',
   html: `
-    <div style="width: 32px; height: 32px; border-radius: 50%; background: #0284C7; border: 2.5px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(2,132,199,0.7); animation: bounce 2s infinite;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
+    <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto; cursor: pointer; user-select: none;">
+      <div style="font-family: ui-monospace, monospace; font-size: 9px; font-weight: 800; padding: 1.5px 6px; border-radius: 9999px; margin-bottom: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.6); white-space: nowrap; background: #082f49; color: #7dd3fc; border: 1px solid #0284c7;">
+        🔵 Rahim En Route (01307726701)
+      </div>
+      <div style="width: 28px; height: 28px; border-radius: 50%; background: #0284C7; border: 2px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(2,132,199,0.7); animation: bounce 2s infinite;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
     </div>
   `,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16]
+  iconSize: [150, 52],
+  iconAnchor: [75, 44],
+  popupAnchor: [0, -44],
 });
 
 export const CommandMap: React.FC = () => {
@@ -120,6 +145,7 @@ export const CommandMap: React.FC = () => {
   const assignIncident = useGreenVisionStore((s) => s.assignIncident);
   const reassignIncident = useGreenVisionStore((s) => s.reassignIncident);
   const escalateIncident = useGreenVisionStore((s) => s.escalateIncident);
+  const deescalateIncident = useGreenVisionStore((s) => s.deescalateIncident);
   const approveResolution = useGreenVisionStore((s) => s.approveResolution);
   const openContactModal = useGreenVisionStore((s) => s.openContactModal);
 
@@ -400,7 +426,7 @@ export const CommandMap: React.FC = () => {
           <Marker
             key={inc.id}
             position={inc.coordinates}
-            icon={createIncidentIcon(inc.priority, inc.status)}
+            icon={createIncidentIcon(inc.priority, inc.status, inc.id)}
             eventHandlers={{
               click: () => setSelectedIncidentId(inc.id),
             }}
@@ -539,7 +565,7 @@ export const CommandMap: React.FC = () => {
                   <span>Confirm Event</span>
                 </button>
                 <button
-                  onClick={() => confirmIncident(selectedIncident.id, 'HIGH', 'Flagged for rapid clean')}
+                  onClick={() => deescalateIncident(selectedIncident.id, 'Marked as false detection by operator')}
                   className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition"
                 >
                   Reject False
@@ -569,9 +595,16 @@ export const CommandMap: React.FC = () => {
               </button>
             )}
 
-            {/* Contact & Escalate Actions */}
+            {/* Contact, De-escalate & Escalate Actions */}
             {selectedIncident.status !== 'CLOSED' && (
-              <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+              <div className="grid grid-cols-4 gap-1 text-[10px]">
+                <button
+                  onClick={() => deescalateIncident(selectedIncident.id, 'Hazard downgraded / Situation contained.')}
+                  className="py-2 rounded-xl bg-amber-950/70 hover:bg-amber-900/70 text-amber-300 border border-amber-800/60 font-semibold transition"
+                  title="De-escalate Incident (User Request 7)"
+                >
+                  De-escalate
+                </button>
                 <button
                   onClick={() => escalateIncident(selectedIncident.id, 'Urgent containment requested at UIU Gate 2.')}
                   className="py-2 rounded-xl bg-red-950/70 hover:bg-red-900/70 text-red-300 border border-red-800/60 font-semibold transition"
@@ -591,8 +624,8 @@ export const CommandMap: React.FC = () => {
                   className="py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 font-bold transition flex items-center justify-center gap-1 shadow"
                   title="Call or SMS 01307726701"
                 >
-                  <PhoneCall className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Contact</span>
+                  <PhoneCall className="w-3 h-3 text-emerald-400" />
+                  <span>Buzz</span>
                 </button>
               </div>
             )}

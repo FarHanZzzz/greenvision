@@ -50,6 +50,40 @@ export const ContactResponderModal: React.FC = () => {
     window.open(`tel:${targetPhone}`, '_self');
   };
 
+  // WhatsApp Instant Alert (Rings & Buzzes phone with push notification in Bangladesh)
+  const handleWhatsAppAlert = () => {
+    const text = encodeURIComponent(
+      `🚨 [GreenVision UIU Alert] Urgent dispatch for Rahim Uddin: ${messageText}`
+    );
+    window.open(`https://wa.me/8801307726701?text=${text}`, '_blank');
+  };
+
+  // Physical Hardware Vibration Motor (Runs if opened on mobile device)
+  const handleHardwareVibrate = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([500, 250, 500, 250, 1000]);
+    }
+    // Also trigger Web Audio alarm buzzer sound through speakers
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.4);
+      osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.6);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.9);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.9);
+    } catch (e) {
+      // Audio context fallback
+    }
+  };
+
   const handleSendSMS = async () => {
     if (!messageText.trim()) return;
 
@@ -140,24 +174,53 @@ export const ContactResponderModal: React.FC = () => {
         {/* Modal Body */}
         <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
           
-          {/* Quick Action Dial Buttons */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Process Explanation Card (User Request 8) */}
+          <div className="bg-slate-950/90 p-3 rounded-2xl border border-emerald-500/30 space-y-1.5">
+            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>How Mobile Alerting & Buzzing Works (01307726701)</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              • <strong>WhatsApp Direct Alert:</strong> Sends instant push notification to WhatsApp on <span className="text-emerald-400 font-mono">+880 1307-726701</span>, triggering your phone's vibration motor & ringtone.<br/>
+              • <strong>Device Hardware Vibration:</strong> Directly engages the smartphone's physical haptic motor via Web Vibration API.<br/>
+              • <strong>Cellular Call / SMS:</strong> Launches device dialer to place cellular call.
+            </p>
+          </div>
+
+          {/* 4 Real Alert & Buzz Buttons */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              onClick={handleWhatsAppAlert}
+              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg transition text-xs"
+            >
+              <MessageSquare className="w-4 h-4 text-emerald-200" />
+              <span>WhatsApp Push Buzz</span>
+            </button>
+
+            <button
+              onClick={handleHardwareVibrate}
+              className="py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg transition text-xs"
+            >
+              <Radio className="w-4 h-4 text-purple-200 animate-pulse" />
+              <span>Test Hardware Vibration</span>
+            </button>
+
             <button
               onClick={handleCall}
-              className="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg transition"
+              className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center justify-center gap-1.5 transition text-xs border border-slate-700"
             >
-              <PhoneCall className="w-4 h-4 animate-pulse" />
-              <span>Call / Buzz Mobile ({targetPhone})</span>
+              <PhoneCall className="w-3.5 h-3.5 text-emerald-400" />
+              <span>GSM Phone Call</span>
             </button>
 
             <button
               onClick={() => {
                 window.open(`sms:${targetPhone}?body=${encodeURIComponent(messageText)}`, '_self');
               }}
-              className="py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg transition"
+              className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center justify-center gap-1.5 transition text-xs border border-slate-700"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>Open Native SMS App</span>
+              <Smartphone className="w-3.5 h-3.5 text-sky-400" />
+              <span>Native SMS App</span>
             </button>
           </div>
 

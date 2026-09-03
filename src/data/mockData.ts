@@ -9,12 +9,12 @@ import {
 
 // Realistic High-Resolution Photographic Evidence Images (Resolves Image 4 / PRD Section 31)
 export const EVIDENCE_IMAGES = {
-  wasteBefore: "https://images.unsplash.com/photo-1605600659873-d808a13e4d2a?auto=format&fit=crop&w=800&q=80", // Real waste pile on pavement
-  wasteAfter: "https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80", // Clean sanitized pavement
-  binBefore: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=800&q=80", // Overflowing trash bin
+  wasteBefore: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=800&q=80", // Real street litter and plastic waste pile on ground
+  wasteAfter: "https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80", // Clean sanitized pavement after sweep
+  binBefore: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=800&q=80", // Real overflowing public trash bin
   binAfter: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80", // Clean emptied bins
-  waterBefore: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=800&q=80", // Rain waterlogged street
-  waterAfter: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=800&q=80" // Dry clean road
+  waterBefore: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=800&q=80", // Rain waterlogged street & puddle
+  waterAfter: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=800&q=80" // Dry clean road after drainage
 };
 
 // 10 Campus Zones: United International University (UIU), Madani Avenue, Badda, Dhaka 1212
@@ -500,6 +500,20 @@ export const USERS: UserProfile[] = [
     status: "AVAILABLE",
     completedTasksToday: 5,
     avgResponseTimeMin: 5.8
+  },
+  {
+    id: "usr-resp-5",
+    name: "Tariqul Islam",
+    role: "FIELD_RESPONDER",
+    roleTitle: "Rapid Emergency Response Lead",
+    department: "SAFETY",
+    team: "Rapid Response Unit",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+    phone: "+880 1845-667788",
+    email: "tariqul.field@uiu.ac.bd",
+    status: "AVAILABLE",
+    completedTasksToday: 3,
+    avgResponseTimeMin: 6.0
   },
   {
     id: "usr-sust-1",
