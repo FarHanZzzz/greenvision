@@ -16,6 +16,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useGreenVisionStore } from '../../store/useGreenVisionStore';
+import { calculateKPIs } from '../../utils/analyticsCalculator';
 
 export const OverviewDashboard: React.FC = () => {
   const incidents = useGreenVisionStore((s) => s.incidents);
@@ -24,17 +25,7 @@ export const OverviewDashboard: React.FC = () => {
   const setSelectedIncidentId = useGreenVisionStore((s) => s.setSelectedIncidentId);
 
   const greenScore = getGreenScore();
-
-  // Metrics dynamically computed from mock incidents (PRD Section 18 & 47)
-  const activeIncidents = incidents.filter(i => i.status !== 'CLOSED' && i.status !== 'FALSE_DETECTION');
-  const criticalCount = incidents.filter(i => i.priority === 'CRITICAL' && i.status !== 'CLOSED').length;
-  const unassignedCount = incidents.filter(i => (i.status === 'CONFIRMED' || i.status === 'DETECTED') && !i.assignedResponderId).length;
-  const teamsRespondingCount = incidents.filter(i => i.status === 'IN_PROGRESS' || i.status === 'ACCEPTED').length;
-  const resolvedTodayCount = incidents.filter(i => i.status === 'CLOSED').length;
-  
-  // Operational Performance
-  const totalIncidents = incidents.length || 1;
-  const resolutionRate = Math.round((resolvedTodayCount / totalIncidents) * 100);
+  const kpis = calculateKPIs(incidents);
 
   return (
     <div className="space-y-6">
@@ -46,7 +37,7 @@ export const OverviewDashboard: React.FC = () => {
             <Activity className="w-4 h-4 text-emerald-600" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono">Current Campus Situation</h3>
           </div>
-          <span className="text-[11px] text-slate-500 font-medium">Computed live from optical events</span>
+          <span className="text-[11px] text-slate-500 font-medium">Computed dynamically from live incident store</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -57,8 +48,8 @@ export const OverviewDashboard: React.FC = () => {
               <span className="text-xs font-medium">Active Events</span>
               <AlertCircle className="w-4 h-4 text-amber-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{activeIncidents.length}</div>
-            <div className="text-[10px] text-slate-400 mt-0.5">3 require field action</div>
+            <div className="text-2xl font-black text-slate-900 mt-1">{kpis.activeCount}</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Requiring field action</div>
           </div>
 
           {/* Critical Priority */}
@@ -67,7 +58,7 @@ export const OverviewDashboard: React.FC = () => {
               <span className="text-xs font-medium">Critical</span>
               <Flame className="w-4 h-4 text-red-500 animate-pulse" />
             </div>
-            <div className="text-2xl font-black text-red-600 mt-1">{criticalCount}</div>
+            <div className="text-2xl font-black text-red-600 mt-1">{kpis.criticalCount}</div>
             <div className="text-[10px] text-red-400 mt-0.5">&lt;30m SLA response</div>
           </div>
 
@@ -77,7 +68,7 @@ export const OverviewDashboard: React.FC = () => {
               <span className="text-xs font-medium">Unassigned</span>
               <Users className="w-4 h-4 text-sky-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{unassignedCount}</div>
+            <div className="text-2xl font-black text-slate-900 mt-1">{kpis.unassignedCount}</div>
             <div className="text-[10px] text-sky-600 font-semibold mt-0.5">Awaiting dispatch</div>
           </div>
 
@@ -87,18 +78,22 @@ export const OverviewDashboard: React.FC = () => {
               <span className="text-xs font-medium">Responding</span>
               <Clock className="w-4 h-4 text-indigo-500" />
             </div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{teamsRespondingCount}</div>
+            <div className="text-2xl font-black text-slate-900 mt-1">{kpis.respondingCount}</div>
             <div className="text-[10px] text-indigo-600 font-medium mt-0.5">Units in transit/work</div>
           </div>
 
-          {/* Overdue / SLA breach */}
+          {/* Overdue / SLA breach (Dynamically Calculated) */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition">
             <div className="flex items-center justify-between text-slate-500">
               <span className="text-xs font-medium">Overdue SLA</span>
-              <AlertTriangle className="w-4 h-4 text-orange-500" />
+              <AlertTriangle className={`w-4 h-4 ${kpis.overdueCount > 0 ? 'text-red-500 animate-bounce' : 'text-slate-400'}`} />
             </div>
-            <div className="text-2xl font-black text-slate-900 mt-1">0</div>
-            <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">100% On-Track</div>
+            <div className={`text-2xl font-black mt-1 ${kpis.overdueCount > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+              {kpis.overdueCount}
+            </div>
+            <div className={`text-[10px] font-semibold mt-0.5 ${kpis.overdueCount > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+              {kpis.overdueCount > 0 ? 'Immediate Escalation' : '100% On-Track'}
+            </div>
           </div>
 
           {/* Resolved Today */}
@@ -107,8 +102,8 @@ export const OverviewDashboard: React.FC = () => {
               <span className="text-xs font-medium">Resolved</span>
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             </div>
-            <div className="text-2xl font-black text-emerald-700 mt-1">{resolvedTodayCount}</div>
-            <div className="text-[10px] text-emerald-600 mt-0.5">+4 vs last shift</div>
+            <div className="text-2xl font-black text-emerald-700 mt-1">{kpis.resolvedTodayCount}</div>
+            <div className="text-[10px] text-emerald-600 mt-0.5">{kpis.resolutionRatePct}% Resolution Rate</div>
           </div>
 
         </div>
@@ -117,7 +112,7 @@ export const OverviewDashboard: React.FC = () => {
       {/* 2. OPERATIONAL INTELLIGENCE & GREEN SCORE ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
-        {/* Environmental Hotspot Insight (PRD Section 34) */}
+        {/* Environmental Hotspot Insight (PRD Section 34 - Computed) */}
         <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 p-5 rounded-2xl text-white shadow-md border border-slate-800 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
@@ -137,9 +132,9 @@ export const OverviewDashboard: React.FC = () => {
                 <span className="text-[10px] font-mono uppercase text-slate-400">Top Problematic Zone</span>
                 <div className="text-sm font-bold text-slate-100 mt-0.5 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Gate 2 & Perimeter</span>
+                  <span>{kpis.topProblemZoneName}</span>
                 </div>
-                <div className="text-[11px] text-rose-300 font-mono mt-1 font-semibold">38 Recorded Incidents</div>
+                <div className="text-[11px] text-rose-300 font-mono mt-1 font-semibold">{kpis.topProblemZoneIncidentCount} Recorded Events</div>
               </div>
 
               <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
@@ -155,9 +150,9 @@ export const OverviewDashboard: React.FC = () => {
                 <span className="text-[10px] font-mono uppercase text-slate-400">Primary Incident Type</span>
                 <div className="text-sm font-bold text-slate-100 mt-0.5 flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Waste Accumulation</span>
+                  <span>{kpis.topCategoryName}</span>
                 </div>
-                <div className="text-[11px] text-emerald-300 font-mono mt-1">64% of total events</div>
+                <div className="text-[11px] text-emerald-300 font-mono mt-1">{kpis.topCategoryPct}% of total events</div>
               </div>
             </div>
 
@@ -166,13 +161,13 @@ export const OverviewDashboard: React.FC = () => {
               <span className="text-emerald-400 font-bold text-sm">💡</span>
               <div>
                 <span className="font-semibold text-emerald-300">Actionable Operational Recommendation: </span>
-                <span>Repeated waste accumulation clusters at Gate 2 during evening peak. Recommend stationing a secondary 240L wheelie bin and shifting Cleaning Team B schedule forward by 45 minutes to prevent perimeter spillage.</span>
+                <span>Repeated waste accumulation clusters at {kpis.topProblemZoneName} during evening peak. Recommend stationing a secondary 240L wheelie bin and shifting Cleaning Team B schedule forward by 45 minutes to prevent perimeter spillage.</span>
               </div>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <span>Historical baseline: 75 tracked campus events</span>
+            <span>Historical baseline: {kpis.totalCount} tracked campus events</span>
             <span className="text-emerald-400 font-semibold cursor-pointer hover:underline flex items-center gap-1">
               View Detailed Hotspot Map <ArrowRight className="w-3 h-3" />
             </span>
@@ -200,7 +195,7 @@ export const OverviewDashboard: React.FC = () => {
               <div>
                 <div className="text-base font-bold text-slate-900">{greenScore.status}</div>
                 <p className="text-xs text-slate-500 mt-0.5">Reflects real operational speed, resolution quality, and repeat reduction.</p>
-                <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">+{greenScore.trendComparisonPct}% vs last 7 days</span>
+                <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">+{greenScore.trendComparisonPct}% vs benchmark</span>
               </div>
             </div>
 
@@ -231,10 +226,10 @@ export const OverviewDashboard: React.FC = () => {
 
       </div>
 
-      {/* 3. OPERATIONAL PERFORMANCE & LIVE ACTIVITY FEED */}
+      {/* 3. OPERATIONAL PERFORMANCE & LIVE ACTIVITY FEED (Computed Metrics) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
-        {/* Operational Metrics Bar */}
+        {/* Operational Metrics Bar - Dynamically Computed */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono">
             Response Efficiency KPIs
@@ -244,15 +239,17 @@ export const OverviewDashboard: React.FC = () => {
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
               <div>
                 <span className="text-xs text-slate-500">Average Response Time</span>
-                <div className="text-lg font-bold text-slate-900">6.8 mins</div>
+                <div className="text-lg font-bold text-slate-900">{kpis.avgResponseTimeMin} mins</div>
               </div>
-              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">EXCELLENT</span>
+              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                {kpis.avgResponseTimeMin <= 10 ? 'EXCELLENT' : 'ON TRACK'}
+              </span>
             </div>
 
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
               <div>
                 <span className="text-xs text-slate-500">Average Resolution Time</span>
-                <div className="text-lg font-bold text-slate-900">18.4 mins</div>
+                <div className="text-lg font-bold text-slate-900">{kpis.avgResolutionTimeMin} mins</div>
               </div>
               <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">&lt; 30m Target</span>
             </div>
@@ -260,7 +257,7 @@ export const OverviewDashboard: React.FC = () => {
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
               <div>
                 <span className="text-xs text-slate-500">Repeat Incident Rate</span>
-                <div className="text-lg font-bold text-slate-900">14.2%</div>
+                <div className="text-lg font-bold text-slate-900">{kpis.repeatIncidentRatePct}%</div>
               </div>
               <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">MONITORING</span>
             </div>
@@ -319,7 +316,7 @@ export const OverviewDashboard: React.FC = () => {
 
           <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
             <span>Human-in-the-loop verified audit trail</span>
-            <span className="font-medium text-emerald-700">All events cryptographically signed</span>
+            <span className="font-medium text-emerald-700">All events signed with operator credentials</span>
           </div>
         </div>
 

@@ -21,6 +21,7 @@ import {
   INITIAL_NOTIFICATIONS,
   EVIDENCE_IMAGES 
 } from '../data/mockData';
+import { calculateKPIs } from '../utils/analyticsCalculator';
 
 export type AppInterface = 'COMMAND_CENTER' | 'OPERATIONS' | 'RESPONDER' | 'DUAL_DEMO';
 
@@ -43,10 +44,13 @@ interface GreenVisionState {
   activityLog: ActivityEvent[];
   notifications: NotificationItem[];
 
+  // Dynamic Responder Live Coordinates for Map Animation
+  responderCoordinates: Record<string, [number, number]>;
+
   // Simulation Controls
   isSimulating: boolean;
   simSpeed: number; // 1, 2, 5
-  simStep: number; // 0..10
+  simStep: number; // 0..6
   activeScenario: DemoScenarioId;
   setSimSpeed: (speed: number) => void;
   setSimulationRunning: (running: boolean) => void;
@@ -58,6 +62,8 @@ interface GreenVisionState {
   confirmIncident: (id: string, priority?: IncidentPriority, notes?: string) => void;
   rejectIncident: (id: string, notes?: string) => void;
   assignIncident: (id: string, responderId: string, supervisorId?: string) => void;
+  reassignIncident: (id: string, newResponderId: string, reason?: string) => void;
+  escalateIncident: (id: string, reason: string) => void;
   acceptTask: (id: string) => void;
   startWork: (id: string) => void;
   resolveTask: (id: string, afterEvidenceUrl: string, notes?: string) => void;
@@ -94,6 +100,14 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
   activityLog: JSON.parse(JSON.stringify(INITIAL_ACTIVITY_LOG)),
   notifications: JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS)),
 
+  // Default positions: Rahim starts at Central Depot [23.8142, 90.4224]
+  responderCoordinates: {
+    "usr-resp-1": [23.8145, 90.4230],
+    "usr-resp-2": [23.8160, 90.4240],
+    "usr-resp-3": [23.8138, 90.4248],
+    "usr-resp-4": [23.8155, 90.4255],
+  },
+
   // Simulation
   isSimulating: false,
   simSpeed: 1,
@@ -113,11 +127,17 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
       selectedIncidentId: "GV-1042",
       selectedCameraId: "GV-CAM-004",
       isSimulating: false,
-      simStep: 0
+      simStep: 0,
+      responderCoordinates: {
+        "usr-resp-1": [23.8145, 90.4230],
+        "usr-resp-2": [23.8160, 90.4240],
+        "usr-resp-3": [23.8138, 90.4248],
+        "usr-resp-4": [23.8155, 90.4255],
+      }
     });
   },
 
-  // Operational Loop Step 1: Human Operator Confirms Incident
+  // 1. Operator Confirms Incident
   confirmIncident: (id, priority, notes) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -194,7 +214,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     }));
   },
 
-  // Operational Loop Step 2: Supervisor Assigns Responder
+  // 2. Supervisor Assigns Responder
   assignIncident: (id, responderId, supervisorId) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -259,15 +279,108 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     });
   },
 
-  // Operational Loop Step 3: Responder Accepts Task
-  acceptTask: (id) => {
+  // Reassign Responder (PRD Section 21 & 25)
+  reassignIncident: (id, newResponderId, reason) => {
+    const nowIso = new Date().toISOString();
+    const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const newResponder = get().users.find(u => u.id === newResponderId);
+
+    set((state) => {
+      const target = state.incidents.find(i => i.id === id);
+      const oldResponderId = target?.assignedResponderId;
+
+      return {
+        incidents: state.incidents.map(inc => inc.id === id ? {
+          ...inc,
+          assignedResponderId: newResponder?.id,
+          assignedResponderName: newResponder?.name,
+          assignedAt: nowIso
+        } : inc),
+        users: state.users.map(u => {
+          if (u.id === oldResponderId) return { ...u, status: 'AVAILABLE' as const, activeTaskId: undefined };
+          if (u.id === newResponderId) return { ...u, status: 'EN_ROUTE' as const, activeTaskId: id };
+          return u;
+        }),
+        activityLog: [
+          {
+            id: `act-${Date.now()}`,
+            timestamp: nowIso,
+            timeFormatted,
+            incidentId: id,
+            type: 'REASSIGNMENT',
+            actor: state.activeUser.name,
+            actorRole: 'Supervisor',
+            description: `Reassigned ${id} to ${newResponder?.name}. Note: ${reason || 'Workload rebalance'}`,
+            severity: 'info'
+          },
+          ...state.activityLog
+        ]
+      };
+    });
+  },
+
+  // Escalate Incident (PRD Section 14, 15, 21, 25)
+  escalateIncident: (id, reason) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
     set((state) => {
       const target = state.incidents.find(i => i.id === id);
       return {
+        incidents: state.incidents.map(inc => inc.id === id ? {
+          ...inc,
+          status: 'ESCALATED' as IncidentStatus,
+          priority: 'CRITICAL' as IncidentPriority,
+          escalationReason: reason || 'SLA threshold approaching. Rapid containment mobilized.'
+        } : inc),
+        activityLog: [
+          {
+            id: `act-${Date.now()}`,
+            timestamp: nowIso,
+            timeFormatted,
+            incidentId: id,
+            type: 'ESCALATION',
+            actor: state.activeUser.name,
+            actorRole: 'Operations',
+            description: `ESCALATED ${id} to CRITICAL priority! ${reason || 'Immediate triage dispatched.'}`,
+            severity: 'danger'
+          },
+          ...state.activityLog
+        ],
+        notifications: [
+          {
+            id: `notif-${Date.now()}`,
+            timestamp: nowIso,
+            timeFormatted,
+            title: `CRITICAL ESCALATION: ${id}`,
+            message: `${target?.locationName}: ${reason || 'Emergency response mobilized.'}`,
+            type: 'NEW_INCIDENT',
+            incidentId: id,
+            read: false,
+            priority: 'CRITICAL'
+          },
+          ...state.notifications
+        ]
+      };
+    });
+  },
+
+  // 3. Responder Accepts Task (Coordinates begin transit)
+  acceptTask: (id) => {
+    const nowIso = new Date().toISOString();
+    const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    set((state) => {
+      const target = state.incidents.find(i => i.id === id);
+      const responderId = target?.assignedResponderId || 'usr-resp-1';
+
+      return {
         incidents: state.incidents.map(inc => inc.id === id ? { ...inc, status: 'ACCEPTED' as IncidentStatus, acceptedAt: nowIso } : inc),
+        // Move responder halfway towards target location
+        responderCoordinates: {
+          ...state.responderCoordinates,
+          [responderId]: [23.8166, 90.4244] // En route midpoint
+        },
         activityLog: [
           {
             id: `act-${Date.now()}`,
@@ -286,15 +399,22 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     });
   },
 
-  // Operational Loop Step 4: Responder Starts Work
+  // 4. Responder Arrives & Starts Work (Coordinates reach incident site)
   startWork: (id) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
     set((state) => {
       const target = state.incidents.find(i => i.id === id);
+      const responderId = target?.assignedResponderId || 'usr-resp-1';
+
       return {
         incidents: state.incidents.map(inc => inc.id === id ? { ...inc, status: 'IN_PROGRESS' as IncidentStatus, workStartedAt: nowIso } : inc),
+        // Responder arrives at exact incident coordinates
+        responderCoordinates: {
+          ...state.responderCoordinates,
+          [responderId]: target?.coordinates || [23.8174, 90.4251]
+        },
         activityLog: [
           {
             id: `act-${Date.now()}`,
@@ -313,7 +433,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     });
   },
 
-  // Operational Loop Step 5: Responder Resolves with Evidence
+  // 5. Responder Resolves with Evidence
   resolveTask: (id, afterEvidenceUrl, notes) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -360,7 +480,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     });
   },
 
-  // Operational Loop Step 6: Supervisor Approves & Closes Incident
+  // 6. Supervisor Approves & Closes Incident
   approveResolution: (id, supervisorNotes) => {
     const nowIso = new Date().toISOString();
     const timeFormatted = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -459,7 +579,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
       title: "Waste Pile Detected near Main Cafeteria Lawn",
       category: "WASTE_ACCUMULATION",
       categoryLabel: "Waste Accumulation",
-      description: "AI vision triggered detection for discarded food bags and cups.",
+      description: "AI vision triggered optical detection for discarded food bags and cups.",
       cameraId: "GV-CAM-006",
       cameraName: "Cafeteria Rear Waste Shute",
       locationId: "zone-5",
@@ -509,67 +629,90 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
     }));
   },
 
-  // Step-by-step Demo Advancement
+  // Multi-Scenario Deterministic Simulation Engine (PRD Section 40 & 41)
   nextSimStep: () => {
     const current = get().simStep;
-    const targetId = "GV-1042";
+    const scenario = get().activeScenario;
 
-    if (current === 0) {
-      // Step 1: Human operator verifies
-      get().confirmIncident(targetId, 'HIGH', 'Verified via Gate 2 optical feed.');
-      set({ simStep: 1 });
-    } else if (current === 1) {
-      // Step 2: Supervisor dispatches to Rahim (Cleaning Team B)
-      get().assignIncident(targetId, "usr-resp-1", "usr-sup-1");
-      set({ simStep: 2 });
-    } else if (current === 2) {
-      // Step 3: Rahim accepts
-      get().acceptTask(targetId);
-      set({ simStep: 3 });
-    } else if (current === 3) {
-      // Step 4: Rahim starts work
-      get().startWork(targetId);
-      set({ simStep: 4 });
-    } else if (current === 4) {
-      // Step 5: Rahim resolves with photo
-      get().resolveTask(targetId, EVIDENCE_IMAGES.wasteAfter, "Debris removed and bin area disinfected.");
-      set({ simStep: 5 });
-    } else if (current === 5) {
-      // Step 6: Supervisor approves and closes
-      get().approveResolution(targetId, "CCTV confirmed area is spotless. Excellent response.");
-      set({ simStep: 6, isSimulating: false });
+    if (scenario === 'waste_dumping_gate2') {
+      const targetId = "GV-1042";
+      if (current === 0) {
+        get().confirmIncident(targetId, 'HIGH', 'Verified via Gate 2 optical feed.');
+        set({ simStep: 1 });
+      } else if (current === 1) {
+        get().assignIncident(targetId, "usr-resp-1", "usr-sup-1");
+        set({ simStep: 2 });
+      } else if (current === 2) {
+        get().acceptTask(targetId);
+        set({ simStep: 3 });
+      } else if (current === 3) {
+        get().startWork(targetId);
+        set({ simStep: 4 });
+      } else if (current === 4) {
+        get().resolveTask(targetId, EVIDENCE_IMAGES.wasteAfter, "Debris removed and bin area disinfected.");
+        set({ simStep: 5 });
+      } else if (current === 5) {
+        get().approveResolution(targetId, "CCTV confirmed area is spotless. Excellent response.");
+        set({ simStep: 6, isSimulating: false });
+      }
+    } else if (scenario === 'bin_overflow_cafeteria') {
+      const targetId = "GV-1039";
+      if (current === 0) {
+        get().acceptTask(targetId);
+        set({ simStep: 1 });
+      } else if (current === 1) {
+        get().startWork(targetId);
+        set({ simStep: 2 });
+      } else if (current === 2) {
+        get().resolveTask(targetId, EVIDENCE_IMAGES.binAfter, "Bin emptied, double-lined, and terrace washed.");
+        set({ simStep: 3 });
+      } else if (current === 3) {
+        get().approveResolution(targetId, "Verified via Camera 5. Terrace restored.");
+        set({ simStep: 4, isSimulating: false });
+      }
+    } else if (scenario === 'waterlogging_parking') {
+      const targetId = "GV-1035";
+      if (current === 0) {
+        get().startWork(targetId);
+        set({ simStep: 1 });
+      } else if (current === 1) {
+        get().resolveTask(targetId, EVIDENCE_IMAGES.waterAfter, "Catch-basin unblocked; auxiliary pump cleared standing water.");
+        set({ simStep: 2 });
+      } else if (current === 2) {
+        get().approveResolution(targetId, "Drainage confirmed flowing. Ramp reopened.");
+        set({ simStep: 3, isSimulating: false });
+      }
     }
   },
 
-  // Dynamic Operational Green Score Computation (Section 35)
+  // Dynamic Operational Green Score Engine (Section 35)
   getGreenScore: () => {
     const incidents = get().incidents;
-    const closed = incidents.filter(i => i.status === 'CLOSED');
-    const total = incidents.length || 1;
+    const kpis = calculateKPIs(incidents);
 
-    // 1. Resolution Rate (30% weight) -> closed / total
-    const resRate = (closed.length / total) * 100;
-    const resolutionScore = Math.min(100, Math.max(0, resRate));
+    // 1. Resolution Rate (30% weight)
+    const resolutionScore = Math.min(100, Math.max(0, kpis.resolutionRatePct));
 
-    // 2. Response Efficiency (20% weight) -> response under 15 mins
-    const responseScore = 88; // Derived benchmark
+    // 2. Response Efficiency (20% weight) -> benchmark 10 min target
+    const responseEfficiency = Math.max(50, Math.min(100, Math.round(100 - (kpis.avgResponseTimeMin - 5) * 4)));
 
-    // 3. Hotspot & Repeat Reduction (20% weight)
-    const recurringScore = 76;
+    // 3. Hotspot & Repeat Reduction (20% weight) -> based on repeat rate
+    const recurringScore = Math.max(60, Math.min(100, Math.round(100 - kpis.repeatIncidentRatePct * 1.5)));
 
     // 4. Waste Management Triage (15% weight)
-    const wasteIncidents = incidents.filter(i => i.category === 'WASTE_ACCUMULATION' || i.category === 'BIN_OVERFLOW' || i.category === 'ILLEGAL_DUMPING');
+    const wasteIncidents = incidents.filter(i => 
+      i.category === 'WASTE_ACCUMULATION' || i.category === 'BIN_OVERFLOW' || i.category === 'ILLEGAL_DUMPING'
+    );
     const wasteClosed = wasteIncidents.filter(i => i.status === 'CLOSED');
-    const wasteScore = (wasteClosed.length / (wasteIncidents.length || 1)) * 100;
+    const wasteScore = Math.round((wasteClosed.length / (wasteIncidents.length || 1)) * 100);
 
-    // 5. Area Cleanliness Index (15% weight)
-    const activeCritical = incidents.filter(i => i.priority === 'CRITICAL' && i.status !== 'CLOSED').length;
-    const cleanlinessScore = Math.max(50, 100 - activeCritical * 15);
+    // 5. Area Cleanliness Index (15% weight) -> penalized by active critical incidents
+    const cleanlinessScore = Math.max(40, 100 - kpis.criticalCount * 12);
 
     // Weighted composite
     const overall = Math.round(
       resolutionScore * 0.30 +
-      responseScore * 0.20 +
+      responseEfficiency * 0.20 +
       recurringScore * 0.20 +
       wasteScore * 0.15 +
       cleanlinessScore * 0.15
@@ -589,13 +732,13 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
       status,
       lastCalculated: 'Just now',
       components: {
-        incidentResolution: { score: Math.round(resolutionScore), weight: 0.30, label: 'Incident Resolution' },
-        responseEfficiency: { score: Math.round(responseScore), weight: 0.20, label: 'Response Efficiency' },
-        recurringReduction: { score: Math.round(recurringScore), weight: 0.20, label: 'Hotspot & Repeat Reduction' },
-        wastePerformance: { score: Math.round(wasteScore), weight: 0.15, label: 'Waste Management Triage' },
-        areaCleanliness: { score: Math.round(cleanlinessScore), weight: 0.15, label: 'Area Cleanliness Index' }
+        incidentResolution: { score: resolutionScore, weight: 0.30, label: 'Incident Resolution' },
+        responseEfficiency: { score: responseEfficiency, weight: 0.20, label: 'Response Efficiency' },
+        recurringReduction: { score: recurringScore, weight: 0.20, label: 'Hotspot & Repeat Reduction' },
+        wastePerformance: { score: wasteScore, weight: 0.15, label: 'Waste Management Triage' },
+        areaCleanliness: { score: cleanlinessScore, weight: 0.15, label: 'Area Cleanliness Index' }
       },
-      trendComparisonPct: 3.8
+      trendComparisonPct: Math.round(((overall - 78) / 78) * 100 * 10) / 10
     };
   },
 

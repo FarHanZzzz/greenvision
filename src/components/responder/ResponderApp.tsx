@@ -11,6 +11,7 @@ import {
   Check, 
   FileText,
   Navigation,
+  Compass,
   Sparkles
 } from 'lucide-react';
 import { useGreenVisionStore } from '../../store/useGreenVisionStore';
@@ -23,31 +24,34 @@ export const ResponderApp: React.FC = () => {
   const startWork = useGreenVisionStore((s) => s.startWork);
   const resolveTask = useGreenVisionStore((s) => s.resolveTask);
 
-  // Default to Rahim's tasks or show first active
-  const myTasks = incidents.filter(i => 
-    i.assignedResponderId === activeUser.id || 
-    i.assignedResponderId === "usr-resp-1" ||
-    i.id === "GV-1042" || 
-    i.id === "GV-1039"
-  );
+  // Dynamic task filtering:
+  // If active user is a field responder, filter by their ID; otherwise fallback to active field queue
+  const myTasks = incidents.filter(i => {
+    if (activeUser.role === 'FIELD_RESPONDER') {
+      return i.assignedResponderId === activeUser.id || (i.assignedResponderId === 'usr-resp-1' && activeUser.id === 'usr-resp-1');
+    }
+    // For presentation demo if admin/supervisor is inspecting responder app:
+    return i.assignedResponderId === 'usr-resp-1' || i.id === 'GV-1042' || i.id === 'GV-1039';
+  });
 
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
-  const [photoUploaded, setPhotoUploaded] = useState(true);
+  const [selectedEvidencePreset, setSelectedEvidencePreset] = useState<'wasteAfter' | 'binAfter' | 'waterAfter'>('wasteAfter');
   const [responderNote, setResponderNote] = useState('Area thoroughly cleared, bagged, and sanitized with bio-spray.');
+  const [showNavigationModal, setShowNavigationModal] = useState(false);
 
   const currentTask = myTasks[selectedTaskIndex] || myTasks[0];
 
   return (
-    <div className="max-w-md mx-auto bg-slate-900 text-white min-h-[640px] rounded-3xl shadow-2xl border-4 border-slate-800 flex flex-col justify-between overflow-hidden">
+    <div className="max-w-md mx-auto bg-slate-900 text-white min-h-[660px] rounded-3xl shadow-2xl border-4 border-slate-800 flex flex-col justify-between overflow-hidden relative">
       
       {/* Smartphone Top Notch & Header */}
       <div>
         <div className="bg-slate-950 px-5 pt-3 pb-3 border-b border-slate-800">
           <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
-            <span className="font-bold text-white">GV Field App</span>
+            <span className="font-bold text-white">GV Field App v1.0</span>
             <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
-              GPS ONLINE
+              GPS ONLINE (DHAKA)
             </span>
           </div>
 
@@ -65,8 +69,8 @@ export const ResponderApp: React.FC = () => {
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] text-slate-400 uppercase font-mono">Today</span>
-              <div className="text-xs font-bold text-emerald-400">{activeUser.completedTasksToday || 4} Done</div>
+              <span className="text-[10px] text-slate-400 uppercase font-mono">Completed</span>
+              <div className="text-xs font-bold text-emerald-400">{activeUser.completedTasksToday || 4} Tasks</div>
             </div>
           </div>
         </div>
@@ -79,7 +83,7 @@ export const ResponderApp: React.FC = () => {
               activeTab === 'ACTIVE' ? 'border-emerald-500 text-emerald-400 bg-slate-800/40' : 'border-transparent text-slate-400'
             }`}
           >
-            Assigned Tasks ({myTasks.filter(t => t.status !== 'CLOSED').length})
+            Assigned Queue ({myTasks.filter(t => t.status !== 'CLOSED').length})
           </button>
           <button
             onClick={() => setActiveTab('HISTORY')}
@@ -87,7 +91,7 @@ export const ResponderApp: React.FC = () => {
               activeTab === 'HISTORY' ? 'border-emerald-500 text-emerald-400 bg-slate-800/40' : 'border-transparent text-slate-400'
             }`}
           >
-            History & Stats
+            History & Badges
           </button>
         </div>
 
@@ -112,10 +116,19 @@ export const ResponderApp: React.FC = () => {
 
                   <h3 className="font-bold text-sm text-slate-100 mt-1.5">{currentTask.title}</h3>
                   
-                  <div className="flex items-center gap-1 text-xs text-slate-400 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span className="truncate">{currentTask.locationName}</span>
-                    <span className="text-emerald-400 font-mono font-semibold ml-auto">~180m away</span>
+                  <div className="flex items-center justify-between text-xs text-slate-400 mt-1.5">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="truncate max-w-[180px]">{currentTask.locationName}</span>
+                    </div>
+                    
+                    <button
+                      onClick={() => setShowNavigationModal(true)}
+                      className="text-sky-400 hover:text-sky-300 font-mono text-[11px] font-bold flex items-center gap-1 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/60"
+                    >
+                      <Navigation className="w-3 h-3" />
+                      <span>Directions</span>
+                    </button>
                   </div>
 
                   <div className="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-xs">
@@ -170,14 +183,42 @@ export const ResponderApp: React.FC = () => {
                   {currentTask.status === 'IN_PROGRESS' && (
                     <div className="space-y-3 bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-slate-200">Completion Evidence:</span>
-                        <span className="text-emerald-400 text-[10px] font-mono">CAMERA READY</span>
+                        <span className="font-bold text-slate-200">Attach Resolution Photo:</span>
+                        <span className="text-emerald-400 text-[10px] font-mono">READY</span>
+                      </div>
+
+                      {/* Photo Preset Selector */}
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                        <button
+                          onClick={() => setSelectedEvidencePreset('wasteAfter')}
+                          className={`px-2 py-1 rounded border transition ${
+                            selectedEvidencePreset === 'wasteAfter' ? 'bg-emerald-600 text-white border-emerald-500 font-bold' : 'bg-slate-900 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          Curb Cleaned
+                        </button>
+                        <button
+                          onClick={() => setSelectedEvidencePreset('binAfter')}
+                          className={`px-2 py-1 rounded border transition ${
+                            selectedEvidencePreset === 'binAfter' ? 'bg-emerald-600 text-white border-emerald-500 font-bold' : 'bg-slate-900 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          Bin Emptied
+                        </button>
+                        <button
+                          onClick={() => setSelectedEvidencePreset('waterAfter')}
+                          className={`px-2 py-1 rounded border transition ${
+                            selectedEvidencePreset === 'waterAfter' ? 'bg-emerald-600 text-white border-emerald-500 font-bold' : 'bg-slate-900 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          Pump Drained
+                        </button>
                       </div>
 
                       {/* Photo preview */}
                       <div className="relative rounded-lg overflow-hidden border border-emerald-500/50">
                         <img
-                          src={EVIDENCE_IMAGES.wasteAfter}
+                          src={EVIDENCE_IMAGES[selectedEvidencePreset]}
                           alt="After"
                           className="w-full h-32 object-cover"
                         />
@@ -196,7 +237,7 @@ export const ResponderApp: React.FC = () => {
                       />
 
                       <button
-                        onClick={() => resolveTask(currentTask.id, EVIDENCE_IMAGES.wasteAfter, responderNote)}
+                        onClick={() => resolveTask(currentTask.id, EVIDENCE_IMAGES[selectedEvidencePreset], responderNote)}
                         className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2"
                       >
                         <CheckCircle2 className="w-4 h-4" />
@@ -228,13 +269,13 @@ export const ResponderApp: React.FC = () => {
               </div>
             ) : (
               <div className="py-12 text-center text-slate-500 text-xs">
-                No active tasks in your queue right now.
+                No active tasks assigned to your roster right now.
               </div>
             )}
           </div>
         )}
 
-        {/* HISTORY & STATS TAB */}
+        {/* HISTORY & BADGES TAB */}
         {activeTab === 'HISTORY' && (
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-2 gap-3 text-center">
@@ -249,7 +290,7 @@ export const ResponderApp: React.FC = () => {
             </div>
 
             <div className="space-y-2 text-xs">
-              <span className="text-[11px] font-mono text-slate-400 uppercase font-semibold">Recent Completions</span>
+              <span className="text-[11px] font-mono text-slate-400 uppercase font-semibold">Verified Cleanups Today</span>
               <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60 flex items-center justify-between">
                 <div>
                   <div className="font-bold text-slate-200">GV-1031: Block A Packaging</div>
@@ -257,10 +298,54 @@ export const ResponderApp: React.FC = () => {
                 </div>
                 <span className="text-emerald-400 font-bold font-mono">+10 pts</span>
               </div>
+              <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-slate-200">GV-1025: Cafeteria Tray Spillage</div>
+                  <div className="text-[10px] text-slate-400">Resolved in 11 mins • Approved</div>
+                </div>
+                <span className="text-emerald-400 font-bold font-mono">+15 pts</span>
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Navigation Modal */}
+      {showNavigationModal && (
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-sm z-50 p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Compass className="w-5 h-5 text-emerald-400 animate-spin" />
+                <span className="font-bold text-sm">Campus Wayfinding Directions</span>
+              </div>
+              <button
+                onClick={() => setShowNavigationModal(false)}
+                className="text-slate-400 hover:text-white text-xs font-bold"
+              >
+                Done
+              </button>
+            </div>
+
+            <div className="mt-4 bg-slate-800 p-4 rounded-xl border border-slate-700 text-xs space-y-2">
+              <div className="text-emerald-400 font-bold">Route to {currentTask?.locationName}:</div>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
+                <li>Exit Central Sanitation Depot via Service Road East.</li>
+                <li>Turn North toward Academic Block A front courtyard (110m).</li>
+                <li>Proceed through Gate 2 perimeter archway.</li>
+                <li>Target Incident {currentTask?.id} is on the right sidewalk curb (70m).</li>
+              </ol>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowNavigationModal(false)}
+            className="w-full py-2.5 rounded-xl bg-emerald-600 font-bold text-xs"
+          >
+            Close Directions
+          </button>
+        </div>
+      )}
 
       {/* Smartphone Bottom Home Bar */}
       <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-center">

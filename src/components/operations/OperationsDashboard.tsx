@@ -13,10 +13,15 @@ import {
   Eye,
   Check,
   ChevronRight,
-  Filter
+  Filter,
+  PhoneCall,
+  UserCheck,
+  Flame,
+  AlertCircle
 } from 'lucide-react';
 import { useGreenVisionStore } from '../../store/useGreenVisionStore';
 import { IncidentRecord, IncidentPriority } from '../../types';
+import { calculateKPIs } from '../../utils/analyticsCalculator';
 
 export const OperationsDashboard: React.FC = () => {
   const incidents = useGreenVisionStore((s) => s.incidents);
@@ -25,20 +30,30 @@ export const OperationsDashboard: React.FC = () => {
   const confirmIncident = useGreenVisionStore((s) => s.confirmIncident);
   const rejectIncident = useGreenVisionStore((s) => s.rejectIncident);
   const assignIncident = useGreenVisionStore((s) => s.assignIncident);
+  const reassignIncident = useGreenVisionStore((s) => s.reassignIncident);
+  const escalateIncident = useGreenVisionStore((s) => s.escalateIncident);
   const approveResolution = useGreenVisionStore((s) => s.approveResolution);
   const reopenIncident = useGreenVisionStore((s) => s.reopenIncident);
   const setSelectedIncidentId = useGreenVisionStore((s) => s.setSelectedIncidentId);
+  const setSelectedCameraId = useGreenVisionStore((s) => s.setSelectedCameraId);
 
   const [opsTab, setOpsTab] = useState<'ACTION_QUEUE' | 'AI_VERIFY' | 'DISPATCH' | 'APPROVAL'>('ACTION_QUEUE');
+  const [selectedResponderForDispatch, setSelectedResponderForDispatch] = useState('usr-resp-1');
+  const [contactFeedback, setContactFeedback] = useState<string | null>(null);
 
   // Filter queues
   const pendingVerification = incidents.filter(i => i.status === 'PENDING_VERIFICATION');
-  const readyToAssign = incidents.filter(i => i.status === 'CONFIRMED' && !i.assignedResponderId);
+  const readyToAssign = incidents.filter(i => (i.status === 'CONFIRMED' || i.status === 'DETECTED') && !i.assignedResponderId);
   const pendingApproval = incidents.filter(i => i.status === 'PENDING_APPROVAL');
   const inProgress = incidents.filter(i => i.status === 'IN_PROGRESS' || i.status === 'ACCEPTED');
+  const completed = incidents.filter(i => i.status === 'CLOSED');
 
-  // Available responders for dispatch
+  // Responders roster
   const availableResponders = users.filter(u => u.role === 'FIELD_RESPONDER');
+  const availableCount = availableResponders.filter(u => u.status === 'AVAILABLE').length;
+  const busyCount = availableResponders.filter(u => u.status !== 'AVAILABLE').length;
+
+  const kpis = calculateKPIs(incidents);
 
   return (
     <div className="space-y-6">
@@ -110,7 +125,7 @@ export const OperationsDashboard: React.FC = () => {
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             <span>Resolution Approval</span>
             {pendingApproval.length > 0 && (
-              <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded bg-emerald-500 text-white font-bold font-mono">
+              <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded bg-purple-500 text-white font-bold font-mono">
                 {pendingApproval.length}
               </span>
             )}
@@ -119,15 +134,71 @@ export const OperationsDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Supervisor Workload Summary Bar (PRD Section 28) */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-mono">Team Available</span>
+            <div className="text-xl font-bold text-emerald-700 mt-0.5">{availableCount} Responders</div>
+          </div>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-mono">Team Busy</span>
+            <div className="text-xl font-bold text-sky-700 mt-0.5">{busyCount} On Duty</div>
+          </div>
+          <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-mono">Tasks Active</span>
+            <div className="text-xl font-bold text-slate-900 mt-0.5">{inProgress.length} In Work</div>
+          </div>
+          <Clock className="w-4 h-4 text-indigo-500" />
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-mono">Tasks Overdue</span>
+            <div className={`text-xl font-bold mt-0.5 ${kpis.overdueCount > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+              {kpis.overdueCount} Breach
+            </div>
+          </div>
+          <AlertTriangle className={`w-4 h-4 ${kpis.overdueCount > 0 ? 'text-red-500' : 'text-slate-300'}`} />
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-mono">Tasks Completed</span>
+            <div className="text-xl font-bold text-emerald-700 mt-0.5">{completed.length} Verified</div>
+          </div>
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        </div>
+      </div>
+
+      {/* Simulated Contact Toast */}
+      {contactFeedback && (
+        <div className="bg-slate-900 text-white p-3 rounded-xl border border-emerald-500/40 text-xs flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{contactFeedback}</span>
+          </div>
+          <button onClick={() => setContactFeedback(null)} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+      )}
+
       {/* 1. ACTION QUEUE VIEW (PRD Section 25) */}
       {opsTab === 'ACTION_QUEUE' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
-              <h3 className="font-bold text-sm text-slate-900">Priority Triage Queue</h3>
-              <p className="text-xs text-slate-500">Live operational incidents requiring human decision or monitoring</p>
+              <h3 className="font-bold text-sm text-slate-900">Priority Triage Queue (Section 25)</h3>
+              <p className="text-xs text-slate-500">Live operational incidents requiring human decision, dispatch, or escalation</p>
             </div>
-            <span className="text-xs text-slate-400 font-mono">Sorted by urgency & SLA</span>
+            <span className="text-xs text-slate-400 font-mono">Full Operational Actions</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -139,8 +210,8 @@ export const OperationsDashboard: React.FC = () => {
                   <th className="py-3 px-4">Priority</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Assigned Responder</th>
-                  <th className="py-3 px-4">SLA Time</th>
-                  <th className="py-3 px-4 text-right">Action Required</th>
+                  <th className="py-3 px-4">SLA Countdown</th>
+                  <th className="py-3 px-4 text-right">Available Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -182,35 +253,64 @@ export const OperationsDashboard: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      {inc.status === 'PENDING_VERIFICATION' ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        
+                        {/* Primary action */}
+                        {inc.status === 'PENDING_VERIFICATION' && (
+                          <button
+                            onClick={() => confirmIncident(inc.id)}
+                            className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition"
+                          >
+                            Verify
+                          </button>
+                        )}
+
+                        {inc.status === 'CONFIRMED' && (
+                          <button
+                            onClick={() => assignIncident(inc.id, "usr-resp-1", "usr-sup-1")}
+                            className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] transition"
+                          >
+                            Dispatch
+                          </button>
+                        )}
+
+                        {inc.status === 'PENDING_APPROVAL' && (
+                          <button
+                            onClick={() => approveResolution(inc.id)}
+                            className="px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] transition"
+                          >
+                            Approve
+                          </button>
+                        )}
+
+                        {/* Secondary Actions (PRD Section 25) */}
                         <button
-                          onClick={() => confirmIncident(inc.id)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition"
+                          onClick={() => escalateIncident(inc.id, 'Priority escalated by shift supervisor.')}
+                          className="px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-[10px] transition"
+                          title="Escalate Incident"
                         >
-                          Verify AI
+                          Escalate
                         </button>
-                      ) : inc.status === 'CONFIRMED' ? (
+
                         <button
-                          onClick={() => assignIncident(inc.id, "usr-resp-1", "usr-sup-1")}
-                          className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-sm transition"
+                          onClick={() => {
+                            setContactFeedback(`SMS alert sent to responder for incident ${inc.id}`);
+                            setTimeout(() => setContactFeedback(null), 3000);
+                          }}
+                          className="p-1 rounded hover:bg-slate-200 text-slate-500"
+                          title="Contact Responder"
                         >
-                          Dispatch Team
+                          <PhoneCall className="w-3.5 h-3.5" />
                         </button>
-                      ) : inc.status === 'PENDING_APPROVAL' ? (
+
                         <button
-                          onClick={() => approveResolution(inc.id)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition"
+                          onClick={() => setSelectedCameraId(inc.cameraId)}
+                          className="p-1 rounded hover:bg-slate-200 text-slate-500"
+                          title="View Camera Feed"
                         >
-                          Review Evidence
+                          <Eye className="w-3.5 h-3.5 text-emerald-600" />
                         </button>
-                      ) : (
-                        <button
-                          onClick={() => setSelectedIncidentId(inc.id)}
-                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
-                        >
-                          Track Work
-                        </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -310,7 +410,21 @@ export const OperationsDashboard: React.FC = () => {
           
           {/* Left 2 Cols: Incidents Ready to Dispatch */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="font-bold text-sm text-slate-900">Incidents Awaiting Team Dispatch</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-slate-900">Incidents Awaiting Team Dispatch</h3>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-500">Assign to:</span>
+                <select
+                  value={selectedResponderForDispatch}
+                  onChange={(e) => setSelectedResponderForDispatch(e.target.value)}
+                  className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none focus:border-emerald-500"
+                >
+                  {availableResponders.map(r => (
+                    <option key={r.id} value={r.id}>{r.name} ({r.team})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             
             {readyToAssign.length === 0 ? (
               <div className="bg-white p-8 rounded-xl border border-slate-200 text-center text-slate-500 text-xs">
@@ -330,11 +444,11 @@ export const OperationsDashboard: React.FC = () => {
 
                   {/* Dispatch Button */}
                   <button
-                    onClick={() => assignIncident(inc.id, "usr-resp-1", "usr-sup-1")}
+                    onClick={() => assignIncident(inc.id, selectedResponderForDispatch, activeUser.id)}
                     className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Dispatch Rahim (Team B)</span>
+                    <span>Dispatch Selected Responder</span>
                   </button>
                 </div>
               ))

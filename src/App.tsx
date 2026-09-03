@@ -4,6 +4,10 @@ import { DemoControlBar } from './components/demo/DemoControlBar';
 import { CommandMap } from './components/map/CommandMap';
 import { OverviewDashboard } from './components/dashboard/OverviewDashboard';
 import { LiveCCTVGrid } from './components/cameras/LiveCCTVGrid';
+import { CamerasManagementView } from './components/cameras/CamerasManagementView';
+import { TeamsManagementView } from './components/teams/TeamsManagementView';
+import { LocationsView } from './components/locations/LocationsView';
+import { SettingsView } from './components/settings/SettingsView';
 import { IncidentsCenter } from './components/incidents/IncidentsCenter';
 import { OperationsDashboard } from './components/operations/OperationsDashboard';
 import { ResponderApp } from './components/responder/ResponderApp';
@@ -21,7 +25,9 @@ import {
   BarChart3, 
   Award, 
   FileText,
+  Users,
   MapPin,
+  Sliders,
   Radio,
   X
 } from 'lucide-react';
@@ -35,21 +41,25 @@ export function App() {
   const setSelectedCameraId = useGreenVisionStore((s) => s.setSelectedCameraId);
   const cameras = useGreenVisionStore((s) => s.cameras);
 
-  // Sub-navigation within Central Command Center
+  // Sub-navigation within Central Command Center (PRD Section 17)
   const [commandSubTab, setCommandSubTab] = useState<
-    'OVERVIEW' | 'MAP' | 'INCIDENTS' | 'CCTV' | 'ANALYTICS' | 'GREENSCORE' | 'REPORTS'
+    'OVERVIEW' | 'MAP' | 'INCIDENTS' | 'CCTV' | 'ANALYTICS' | 'GREENSCORE' | 'REPORTS' | 'CAMERAS' | 'TEAMS' | 'ZONES' | 'SETTINGS'
   >('OVERVIEW');
 
   const selectedCamera = cameras.find(c => c.id === selectedCameraId);
 
   const commandNavItems = [
     { id: 'OVERVIEW', label: 'Overview', icon: LayoutDashboard },
-    { id: 'MAP', label: 'Live Command Map', icon: MapIcon },
+    { id: 'MAP', label: 'Command Map', icon: MapIcon },
     { id: 'INCIDENTS', label: 'Incidents Directory', icon: AlertCircle },
-    { id: 'CCTV', label: 'Live CCTV Matrix', icon: Video },
+    { id: 'CCTV', label: 'CCTV Matrix', icon: Video },
     { id: 'ANALYTICS', label: 'Analytics & Trends', icon: BarChart3 },
     { id: 'GREENSCORE', label: 'Operational Green Score', icon: Award },
-    { id: 'REPORTS', label: 'Reports & Audits', icon: FileText },
+    { id: 'REPORTS', label: 'Reports', icon: FileText },
+    { id: 'CAMERAS', label: 'Cameras Inventory', icon: Video },
+    { id: 'TEAMS', label: 'Field Teams', icon: Users },
+    { id: 'ZONES', label: 'Campus Zones', icon: MapPin },
+    { id: 'SETTINGS', label: 'Settings', icon: Sliders },
   ];
 
   return (
@@ -61,7 +71,7 @@ export function App() {
       {/* Main Workspace Body */}
       <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 py-6">
         
-        {/* INTERFACE 1: CENTRAL COMMAND CENTER */}
+        {/* INTERFACE 1: CENTRAL COMMAND CENTER (PRD Section 17) */}
         {currentInterface === 'COMMAND_CENTER' && (
           <div className="space-y-6">
             
@@ -74,7 +84,7 @@ export function App() {
                   <button
                     key={tab.id}
                     onClick={() => setCommandSubTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                       isActive
                         ? 'bg-slate-900 text-white shadow-sm font-bold'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -121,6 +131,14 @@ export function App() {
             {commandSubTab === 'GREENSCORE' && <GreenScoreView />}
 
             {commandSubTab === 'REPORTS' && <ReportsView />}
+
+            {commandSubTab === 'CAMERAS' && <CamerasManagementView />}
+
+            {commandSubTab === 'TEAMS' && <TeamsManagementView />}
+
+            {commandSubTab === 'ZONES' && <LocationsView />}
+
+            {commandSubTab === 'SETTINGS' && <SettingsView />}
 
           </div>
         )}
