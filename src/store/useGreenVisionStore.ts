@@ -23,7 +23,7 @@ import {
 } from '../data/mockData';
 import { calculateKPIs } from '../utils/analyticsCalculator';
 
-export type AppInterface = 'COMMAND_CENTER' | 'OPERATIONS' | 'RESPONDER' | 'DUAL_DEMO';
+export type AppInterface = 'COMMAND_CENTER' | 'OPERATIONS' | 'RESPONDER' | 'DUAL_DEMO' | 'HERO';
 
 interface GreenVisionState {
   // Navigation & Personas
@@ -92,7 +92,7 @@ interface GreenVisionState {
 }
 
 export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
-  currentInterface: 'COMMAND_CENTER',
+  currentInterface: 'HERO',
   setInterface: (ui) => set({ currentInterface: ui }),
   
   commandSubTab: 'OVERVIEW',

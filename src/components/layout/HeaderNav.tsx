@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   Radio,
   HelpCircle,
-  PhoneCall
+  PhoneCall,
+  Sparkles
 } from 'lucide-react';
 import { useGreenVisionStore, AppInterface } from '../../store/useGreenVisionStore';
 
@@ -53,6 +54,7 @@ export const HeaderNav: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const interfaces: { id: AppInterface; label: string; icon: any }[] = [
+    { id: 'HERO', label: 'Hero Page', icon: Sparkles },
     { id: 'COMMAND_CENTER', label: 'Central Command', icon: LayoutDashboard },
     { id: 'OPERATIONS', label: 'Operations Room', icon: SlidersHorizontal },
     { id: 'RESPONDER', label: 'Responder Mobile', icon: Smartphone },

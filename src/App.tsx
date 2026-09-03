@@ -18,6 +18,7 @@ import { DualDemoView } from './components/demo/DualDemoView';
 import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { GreenScoreView } from './components/greenscore/GreenScoreView';
 import { ReportsView } from './components/reports/ReportsView';
+import { HeroLandingPage } from './components/hero/HeroLandingPage';
 import { useGreenVisionStore } from './store/useGreenVisionStore';
 import { useSimulationEngine } from './store/simulationRunner';
 import { 
@@ -67,16 +68,22 @@ export function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white pb-20">
+    <div className={`min-h-screen ${currentInterface === 'HERO' ? 'bg-[#070d0b] text-white' : 'bg-slate-100 text-slate-900'} flex flex-col font-sans selection:bg-emerald-500 selection:text-white pb-20`}>
       
       {/* Global Navigation Header with UIU Branding & Guide */}
       <HeaderNav />
 
-      {/* Main Workspace Body */}
-      <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 py-4">
-        
-        {/* INTERFACE 1: CENTRAL COMMAND CENTER */}
-        {currentInterface === 'COMMAND_CENTER' && (
+      {/* INTERFACE 0: HERO SHOWCASE & PLATFORM LANDING PAGE */}
+      {currentInterface === 'HERO' && (
+        <HeroLandingPage />
+      )}
+
+      {/* Main Workspace Body for Operational Dashboards */}
+      {currentInterface !== 'HERO' && (
+        <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 py-4">
+          
+          {/* INTERFACE 1: CENTRAL COMMAND CENTER */}
+          {currentInterface === 'COMMAND_CENTER' && (
           <div className="space-y-4">
             
             {/* Command Center Sub-Navigation Tabs */}
@@ -170,10 +177,11 @@ export function App() {
           <DualDemoView />
         )}
 
-      </main>
+        </main>
+      )}
 
       {/* Floating Controllable Demo Control Bar with Minimize Toggle */}
-      <DemoControlBar />
+      {currentInterface !== 'HERO' && <DemoControlBar />}
 
       {/* Interactive SMS & Call Dispatcher Modal (01307726701) */}
       <ContactResponderModal />
