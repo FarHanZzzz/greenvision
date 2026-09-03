@@ -461,7 +461,12 @@ export const CommandMap: React.FC = () => {
 
       {/* Slide-Over Incident Details Drawer (PRD Section 21) */}
       {selectedIncident && (
-        <div className="absolute top-0 right-0 bottom-0 w-96 z-[400] bg-slate-950/95 backdrop-blur-md border-l border-slate-800 text-white p-4 shadow-2xl flex flex-col justify-between overflow-y-auto">
+        <div className="fixed inset-0 z-[500] flex justify-end" onClick={() => setSelectedIncidentId(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-sm bg-slate-950/98 backdrop-blur-md border-l border-slate-800 text-white p-4 shadow-2xl flex flex-col overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
           <div>
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -638,6 +643,7 @@ export const CommandMap: React.FC = () => {
               <span>Inspect Live Feed ({selectedIncident.cameraId})</span>
             </button>
           </div>
+        </div>
         </div>
       )}
 
