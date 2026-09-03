@@ -674,8 +674,8 @@ export const INITIAL_INCIDENTS: IncidentRecord[] = [
       assignedDepartment: (catList[catIndex] === 'WATERLOGGING' ? 'MAINTENANCE' : 'CLEANING') as any,
       assignedResponderId: 'usr-resp-1',
       assignedResponderName: 'Rahim Uddin',
-      beforeEvidenceUrl: EVIDENCE_IMAGES.wasteBefore,
-      afterEvidenceUrl: EVIDENCE_IMAGES.wasteAfter,
+      beforeEvidenceUrl: catList[catIndex] === 'BIN_OVERFLOW' ? EVIDENCE_IMAGES.binBefore : catList[catIndex] === 'WATERLOGGING' ? EVIDENCE_IMAGES.waterBefore : EVIDENCE_IMAGES.wasteBefore,
+      afterEvidenceUrl: catList[catIndex] === 'BIN_OVERFLOW' ? EVIDENCE_IMAGES.binAfter : catList[catIndex] === 'WATERLOGGING' ? EVIDENCE_IMAGES.waterAfter : EVIDENCE_IMAGES.wasteAfter,
       supervisorNotes: "Resolution verified against live CCTV feed. Approved."
     };
   })

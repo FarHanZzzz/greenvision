@@ -5,7 +5,8 @@ import {
   Marker, 
   Popup, 
   Polygon, 
-  Circle 
+  Circle,
+  ZoomControl
 } from 'react-leaflet';
 import L from 'leaflet';
 import { 
@@ -154,7 +155,7 @@ export const CommandMap: React.FC = () => {
       <div className="absolute top-4 left-4 z-[400] flex flex-wrap items-center gap-2 bg-slate-950/90 backdrop-blur-md p-2 rounded-2xl border border-slate-800 text-xs shadow-2xl max-w-[calc(100%-32px)]">
         <span className="text-[11px] font-mono font-bold text-emerald-400 px-2 flex items-center gap-1.5">
           <Layers className="w-3.5 h-3.5 text-emerald-400" />
-          <span>UIU DHAKA GRID</span>
+          <span>DHAKA GRID</span>
         </span>
 
         {/* Map Type Switcher */}
@@ -265,8 +266,10 @@ export const CommandMap: React.FC = () => {
         center={[23.7980, 90.4498]}
         zoom={17}
         scrollWheelZoom={true}
+        zoomControl={false}
         className="w-full h-full"
       >
+        <ZoomControl position="bottomright" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> | United International University, Dhaka'
           url={tileUrls[mapStyle]}

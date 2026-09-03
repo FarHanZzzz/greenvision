@@ -140,7 +140,24 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
   activeScenario: 'waste_dumping_gate2',
   setSimSpeed: (simSpeed) => set({ simSpeed }),
   setSimulationRunning: (isSimulating) => set({ isSimulating }),
-  setScenario: (sc) => set({ activeScenario: sc, simStep: 0, isSimulating: false }),
+  setScenario: (sc) => {
+    const targetId = sc === 'bin_overflow_cafeteria' ? 'GV-1039' : sc === 'waterlogging_parking' ? 'GV-1035' : 'GV-1042';
+    const targetCam = sc === 'bin_overflow_cafeteria' ? 'GV-CAM-005' : sc === 'waterlogging_parking' ? 'GV-CAM-009' : 'GV-CAM-004';
+    set({
+      activeScenario: sc,
+      simStep: 0,
+      isSimulating: false,
+      selectedIncidentId: targetId,
+      selectedCameraId: targetCam,
+      incidents: JSON.parse(JSON.stringify(INITIAL_INCIDENTS)),
+      responderCoordinates: {
+        "usr-resp-1": [23.7965, 90.4503],
+        "usr-resp-2": [23.7980, 90.4494],
+        "usr-resp-3": [23.7968, 90.4493],
+        "usr-resp-4": [23.7976, 90.4504],
+      }
+    });
+  },
 
   resetDemoToBaseline: () => {
     set({
@@ -661,6 +678,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
 
     if (scenario === 'waste_dumping_gate2') {
       const targetId = "GV-1042";
+      set({ selectedIncidentId: targetId, selectedCameraId: "GV-CAM-004" });
       if (current === 0) {
         get().confirmIncident(targetId, 'HIGH', 'Verified via UIU Gate 2 optical feed.');
         set({ simStep: 1 });
@@ -682,6 +700,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
       }
     } else if (scenario === 'bin_overflow_cafeteria') {
       const targetId = "GV-1039";
+      set({ selectedIncidentId: targetId, selectedCameraId: "GV-CAM-005" });
       if (current === 0) {
         get().acceptTask(targetId);
         set({ simStep: 1 });
@@ -697,6 +716,7 @@ export const useGreenVisionStore = create<GreenVisionState>((set, get) => ({
       }
     } else if (scenario === 'waterlogging_parking') {
       const targetId = "GV-1035";
+      set({ selectedIncidentId: targetId, selectedCameraId: "GV-CAM-009" });
       if (current === 0) {
         get().startWork(targetId);
         set({ simStep: 1 });

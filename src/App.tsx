@@ -109,7 +109,7 @@ export function App() {
                     <div className="flex items-center gap-2">
                       <MapIcon className="w-4 h-4 text-emerald-600" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 font-mono">
-                        United International University (UIU) — Live Environmental Grid
+                        Dhaka — Live Environmental Grid
                       </h3>
                     </div>
                     <span className="text-[11px] text-slate-400 font-mono">Real-time GPS & Optical Tracking • Madani Ave, Dhaka</span>

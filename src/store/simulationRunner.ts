@@ -6,15 +6,17 @@ export function useSimulationEngine() {
   const isSimulating = useGreenVisionStore((s) => s.isSimulating);
   const simSpeed = useGreenVisionStore((s) => s.simSpeed);
   const simStep = useGreenVisionStore((s) => s.simStep);
+  const activeScenario = useGreenVisionStore((s) => s.activeScenario);
   const nextSimStep = useGreenVisionStore((s) => s.nextSimStep);
   const setSimulationRunning = useGreenVisionStore((s) => s.setSimulationRunning);
+
+  const maxSteps = activeScenario === 'waste_dumping_gate2' ? 6 : activeScenario === 'bin_overflow_cafeteria' ? 4 : 3;
 
   useEffect(() => {
     if (!isSimulating) return;
 
-    if (simStep >= 6) {
+    if (simStep >= maxSteps) {
       setSimulationRunning(false);
-      // Trigger festive celebration confetti on successful closed-loop completion!
       try {
         confetti({
           particleCount: 80,
@@ -28,13 +30,13 @@ export function useSimulationEngine() {
       return;
     }
 
-    // Step interval adjusted by speed multiplier (base: 3200ms)
-    const intervalTime = Math.max(800, 3200 / simSpeed);
+    // Step interval: 2200ms at 1x, 1100ms at 2x, 500ms at 5x
+    const intervalTime = Math.max(500, Math.round(2200 / simSpeed));
 
     const timer = setTimeout(() => {
       nextSimStep();
     }, intervalTime);
 
     return () => clearTimeout(timer);
-  }, [isSimulating, simStep, simSpeed, nextSimStep, setSimulationRunning]);
+  }, [isSimulating, simStep, simSpeed, activeScenario, maxSteps, nextSimStep, setSimulationRunning]);
 }
